@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36414.22
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backgammon", "Backgammon.csproj", "{3B58E2F6-6415-4525-BFE6-D46B17876B6C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameGui", "GameGui\GameGui.csproj", "{80B828D1-89E9-0627-E1F3-AE3012616094}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameLogic", "..\GameLogic\GameLogic.csproj", "{BFB8FDF3-D7DF-41CA-8D88-4C2A424ABD33}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameLogic", "GameLogic\GameLogic.csproj", "{E80C26B1-FA29-564A-B47F-041BFC50F826}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3B58E2F6-6415-4525-BFE6-D46B17876B6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3B58E2F6-6415-4525-BFE6-D46B17876B6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3B58E2F6-6415-4525-BFE6-D46B17876B6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3B58E2F6-6415-4525-BFE6-D46B17876B6C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BFB8FDF3-D7DF-41CA-8D88-4C2A424ABD33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BFB8FDF3-D7DF-41CA-8D88-4C2A424ABD33}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BFB8FDF3-D7DF-41CA-8D88-4C2A424ABD33}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BFB8FDF3-D7DF-41CA-8D88-4C2A424ABD33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{80B828D1-89E9-0627-E1F3-AE3012616094}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{80B828D1-89E9-0627-E1F3-AE3012616094}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{80B828D1-89E9-0627-E1F3-AE3012616094}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{80B828D1-89E9-0627-E1F3-AE3012616094}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E80C26B1-FA29-564A-B47F-041BFC50F826}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E80C26B1-FA29-564A-B47F-041BFC50F826}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E80C26B1-FA29-564A-B47F-041BFC50F826}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E80C26B1-FA29-564A-B47F-041BFC50F826}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
