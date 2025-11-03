@@ -9,7 +9,39 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="assets\dice-five.png" />
+    <None Remove="assets\dice-four.png" />
+    <None Remove="assets\dice-one.png" />
+    <None Remove="assets\dice-three.png" />
+    <None Remove="assets\dice-two.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="assets\dice-six.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="assets\dice-two.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\GameLogic\GameLogic.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="assets\dice-five.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="assets\dice-four.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="assets\dice-one.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="assets\dice-three.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
 </Project>
