@@ -2,10 +2,15 @@
 {
     public class GameState
 {
-        private BoardField[,] board = new BoardField[12,12];
+        private BoardField[,] board = new BoardField[12, 12];
+        private Player currentPlayer;
+        public int firstDice { get; set; } = 0;
+        public int secondDice { get; set; } = 0;
+
         public GameState()
         {
             InitBoard();
+            currentPlayer = Player.red;
         }
 
         private void InitBoard()
@@ -60,6 +65,12 @@
             if (board[row, col].player == player) return true;
             if (board[row, col].player != player && board[row, col].amount == 1) return true;
             return false;
+        }
+
+        public BoardField getBoardField(int row, int col)
+        {
+            if (row < 0 || row > 1 || col < 0 || col > 11) return new BoardField(Player.none, 0);
+            return board[row, col];
         }
     }
 }
