@@ -146,14 +146,14 @@ namespace Backgammon
             for (int c = 0; c < 12; c++)
             {
                 //góra
-                BoardField fieldTop = gameState.getBoardField(0, c);
+                BoardField fieldTop = gameState.GetBoardField(new Position(0, c));
                 for (int a = 1; a <= fieldTop.amount; a++)
                 {
                     MyCanvas.Children.Add(CreatePawn(c, a, fieldTop.amount, fieldTop.player, true));
                 }
 
                 //dół
-                BoardField fieldBottom = gameState.getBoardField(1, c);
+                BoardField fieldBottom = gameState.GetBoardField(new Position(1, c));
                 for (int a = 1; a <= fieldBottom.amount; a++)
                 {
                     MyCanvas.Children.Add(CreatePawn(c, a, fieldBottom.amount, fieldBottom.player, false));
@@ -205,8 +205,6 @@ namespace Backgammon
         private Image CreateDice(double left, double top, string name, Image dice)
         {
             int amount = rand.Next(1, 7);
-            if (name == "d1") gameState.firstDice = amount;
-            else gameState.secondDice = amount;
 
             dice = new Image
             {
