@@ -119,12 +119,16 @@
         {
             List<Position> possibleMoves = new List<Position>();
 
-            var nextFieldFirstDice = CalculateNextField(pos, firstDice);
+            var nextFieldFirstDice = CalculateNextField(pos, firstDice); 
             var nextFieldSecondDice = CalculateNextField(pos, secondDice);
 
             if (nextFieldFirstDice != null && CanMove(nextFieldFirstDice)) possibleMoves.Add(nextFieldFirstDice);
             if (nextFieldSecondDice != null && CanMove(nextFieldSecondDice)) possibleMoves.Add(nextFieldSecondDice);
 
+            if (possibleMoves.Count == 2
+                && possibleMoves[0].row == possibleMoves[1].row
+                && possibleMoves[0].col == possibleMoves[1].col
+            ) return possibleMoves.Take(1).ToList();
             return possibleMoves;
         }
     }

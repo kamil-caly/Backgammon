@@ -28,12 +28,13 @@ namespace Backgammon
         private Image firstDice = default!;
         private Image secondDice = default!;
         private Ellipse currPlayerInfo;
+        private List<Rectangle> possibleMovesMarks;
 
         private bool isDragging = false;
         private bool isCapturingPawn = false;
-        private Point mouseOffset;
+        private Point mouseOffsetForDragLogic;
+        private Point mouseOffsetWhenPawnClick;
         private Ellipse? draggedPawn;
-        //private List<Ellipse> pawns = default!;
 
         public MainWindow()
         {
@@ -42,7 +43,7 @@ namespace Backgammon
             gameState = new GameState();
             rand = new Random();
             currPlayerInfo = new Ellipse();
-            //pawns = new List<Ellipse>();
+            possibleMovesMarks = new List<Rectangle>();
             DrawBoard();
             DrawPawns();
             DrawDice();
@@ -51,17 +52,25 @@ namespace Backgammon
         private void MyCanvas_MouseMove(object sender, MouseEventArgs e)
         {
             var hovered = e.OriginalSource as Ellipse;
-            if (hovered != null && (string)hovered.DataContext == "Pawn")
+            if (hovered != null
+                && hovered.DataContext?.ToString() != null
+                && hovered.DataContext.ToString()!.Contains("Pawn")
+                && hovered.Fill == (gameState.currentPlayer == Player.red ? redPawnColor : whiteFieldColor)
+            )
             {
                 if (!isCapturingPawn)
                 {
                     isCapturingPawn = true;
                     Debug.WriteLine($"Najechano na pionek {rand.Next(1000)}");
+                    string ctx = (string)hovered.DataContext;
+                    MarkPossibleMoves(new Position(Int16.Parse(ctx.Split('-')[1]), Int16.Parse(ctx.Split('-')[2])));
                 }
             }
             else
             {
                 isCapturingPawn = false;
+                possibleMovesMarks.ForEach(m => MyCanvas.Children.Remove(m));
+                possibleMovesMarks.Clear();
             }
         }
 
@@ -165,7 +174,7 @@ namespace Backgammon
         {
             Ellipse pawn = new Ellipse
             {
-                DataContext = "Pawn",
+                DataContext = $"Pawn-{(isTop ? 0 : 1)}-{left}",
                 Width = pawnSize,
                 Height = pawnSize,
                 Stroke = Brushes.Black,
@@ -198,16 +207,17 @@ namespace Backgammon
 
         private void DrawDice()
         {
-            MyCanvas.Children.Add(CreateDice(690, 385, "d1", firstDice));
-            MyCanvas.Children.Add(CreateDice(790, 385, "d2", secondDice));
+            MyCanvas.Children.Add(CreateDice(690, 385, "d1", ref firstDice));
+            MyCanvas.Children.Add(CreateDice(790, 385, "d2", ref secondDice));
         }
 
-        private Image CreateDice(double left, double top, string name, Image dice)
+        private Image CreateDice(double left, double top, string name, ref Image dice)
         {
             int amount = rand.Next(1, 7);
 
             dice = new Image
             {
+                DataContext = amount,
                 Width = 74,
                 Height = 74,
                 Name = name,
@@ -221,6 +231,29 @@ namespace Backgammon
 
             return dice;
         }
+
+        private void MarkPossibleMoves(Position choosenPawn)
+        {
+            var possibleMoves = gameState.GetPossibleMoves(choosenPawn, (int)firstDice.DataContext, (int)secondDice.DataContext);
+
+            foreach (var move in possibleMoves)
+            {
+                Rectangle moveMark = new Rectangle
+                {
+                    Width = pawnSize,
+                    Height = 360,
+                    Stroke = Brushes.White,
+                    StrokeThickness = 2,
+                    StrokeDashArray = new DoubleCollection { 1, 1 }, // 1j kreska, 1j przerwa
+                    Fill = Brushes.Transparent
+                };
+
+                Canvas.SetLeft(moveMark, pawnSize + (move.col < 6 ? move.col : move.col + 1) * pawnSize);
+                Canvas.SetTop(moveMark, move.row == 0 ? pawnTopStart : pawnDownStart - 290);
+                MyCanvas.Children.Add(moveMark);
+                possibleMovesMarks.Add(moveMark);
+            }
+        }
         #endregion
 
         private void Pawn_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -230,9 +263,10 @@ namespace Backgammon
             {
                 isDragging = true;
                 Panel.SetZIndex(draggedPawn, 1000);
-                mouseOffset = e.GetPosition(MyCanvas);
-                mouseOffset.X -= Canvas.GetLeft(draggedPawn);
-                mouseOffset.Y -= Canvas.GetTop(draggedPawn);
+                mouseOffsetForDragLogic = e.GetPosition(MyCanvas);
+                mouseOffsetWhenPawnClick = e.GetPosition(MyCanvas);
+                mouseOffsetForDragLogic.X -= Canvas.GetLeft(draggedPawn);
+                mouseOffsetForDragLogic.Y -= Canvas.GetTop(draggedPawn);
                 draggedPawn.CaptureMouse();
             }
         }
@@ -242,8 +276,8 @@ namespace Backgammon
             if (isDragging && draggedPawn != null)
             {
                 Point position = e.GetPosition(MyCanvas);
-                Canvas.SetLeft(draggedPawn, position.X - mouseOffset.X);
-                Canvas.SetTop(draggedPawn, position.Y - mouseOffset.Y);
+                Canvas.SetLeft(draggedPawn, position.X - mouseOffsetForDragLogic.X);
+                Canvas.SetTop(draggedPawn, position.Y - mouseOffsetForDragLogic.Y);
             }
         }
 
@@ -253,6 +287,9 @@ namespace Backgammon
             {
                 isDragging = false;
                 Panel.SetZIndex(draggedPawn, 0);
+                Point position = e.GetPosition(MyCanvas);
+                if (mouseOffsetWhenPawnClick.X == position.X && mouseOffsetWhenPawnClick.Y == position.Y) 
+                    Debug.Write("Nastąpiło kliknięcie na pionek");
                 draggedPawn.ReleaseMouseCapture();
                 draggedPawn = null;
             }
