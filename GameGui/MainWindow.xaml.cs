@@ -1,8 +1,8 @@
 ﻿using GameLogic;
 using System.Diagnostics;
-using System.Numerics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
@@ -11,12 +11,13 @@ namespace Backgammon
 {
     public partial class MainWindow : Window
     {
-        private SolidColorBrush boardColor = new SolidColorBrush(Color.FromRgb(40, 80, 66));
-        private SolidColorBrush redFieldColor = new SolidColorBrush(Color.FromRgb(170, 36, 36));
-        private SolidColorBrush whiteFieldColor = new SolidColorBrush(Color.FromRgb(134, 144, 124));
-        private SolidColorBrush redPawnColor = new SolidColorBrush(Color.FromRgb(238, 34, 17));
-        private SolidColorBrush whitePawnColor = new SolidColorBrush(Color.FromRgb(238, 238, 238));
+        private readonly SolidColorBrush boardColor = new SolidColorBrush(Color.FromRgb(40, 80, 66));
+        private readonly SolidColorBrush redFieldColor = new SolidColorBrush(Color.FromRgb(170, 36, 36));
+        private readonly SolidColorBrush whiteFieldColor = new SolidColorBrush(Color.FromRgb(134, 144, 124));
+        private readonly SolidColorBrush redPawnColor = new SolidColorBrush(Color.FromRgb(238, 34, 17));
+        private readonly SolidColorBrush whitePawnColor = new SolidColorBrush(Color.FromRgb(238, 238, 238));
         private readonly string assetsPath = "assets/";
+
         private Random rand;
         private const int pawnSize = 70;
         private const int maxPawnLenInCol = 350;
@@ -27,11 +28,17 @@ namespace Backgammon
         private Image firstDice = default!;
         private Image secondDice = default!;
         private Ellipse currPlayerInfo;
+
+        private bool isDragging = false;
+        private bool isCapturingPawn = false;
+        private Point mouseOffset;
+        private Ellipse? draggedPawn;
         //private List<Ellipse> pawns = default!;
 
         public MainWindow()
         {
             InitializeComponent();
+            MyCanvas.MouseMove += MyCanvas_MouseMove;
             gameState = new GameState();
             rand = new Random();
             currPlayerInfo = new Ellipse();
@@ -41,6 +48,24 @@ namespace Backgammon
             DrawDice();
         }
 
+        private void MyCanvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            var hovered = e.OriginalSource as Ellipse;
+            if (hovered != null && (string)hovered.DataContext == "Pawn")
+            {
+                if (!isCapturingPawn)
+                {
+                    isCapturingPawn = true;
+                    Debug.WriteLine($"Najechano na pionek {rand.Next(1000)}");
+                }
+            }
+            else
+            {
+                isCapturingPawn = false;
+            }
+        }
+
+        #region Drawing
         private void DrawBoard()
         {
             // Łączna szerokość -> 992 = 70 + 420 + 70 + 420 + 12
@@ -140,12 +165,17 @@ namespace Backgammon
         {
             Ellipse pawn = new Ellipse
             {
+                DataContext = "Pawn",
                 Width = pawnSize,
                 Height = pawnSize,
                 Stroke = Brushes.Black,
                 StrokeThickness = 3,
                 Fill = player == Player.red ? redPawnColor : whitePawnColor,
             };
+
+            pawn.MouseLeftButtonDown += Pawn_MouseLeftButtonDown;
+            pawn.MouseMove += Pawn_MouseMove;
+            pawn.MouseLeftButtonUp += Pawn_MouseLeftButtonUp;
 
             int top = 0;
             if (amount <= 5)
@@ -192,6 +222,42 @@ namespace Backgammon
             Canvas.SetTop(dice, top);
 
             return dice;
+        }
+        #endregion
+
+        private void Pawn_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            draggedPawn = sender as Ellipse;
+            if (draggedPawn != null)
+            {
+                isDragging = true;
+                Panel.SetZIndex(draggedPawn, 1000);
+                mouseOffset = e.GetPosition(MyCanvas);
+                mouseOffset.X -= Canvas.GetLeft(draggedPawn);
+                mouseOffset.Y -= Canvas.GetTop(draggedPawn);
+                draggedPawn.CaptureMouse();
+            }
+        }
+
+        private void Pawn_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (isDragging && draggedPawn != null)
+            {
+                Point position = e.GetPosition(MyCanvas);
+                Canvas.SetLeft(draggedPawn, position.X - mouseOffset.X);
+                Canvas.SetTop(draggedPawn, position.Y - mouseOffset.Y);
+            }
+        }
+
+        private void Pawn_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (isDragging && draggedPawn != null)
+            {
+                isDragging = false;
+                Panel.SetZIndex(draggedPawn, 0);
+                draggedPawn.ReleaseMouseCapture();
+                draggedPawn = null;
+            }
         }
 
         private string GetDicePath(int amount)
