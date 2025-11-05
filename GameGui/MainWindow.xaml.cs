@@ -1,5 +1,6 @@
 ﻿using GameLogic;
 using System.Diagnostics;
+using System.Numerics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -25,6 +26,7 @@ namespace Backgammon
 
         private Image firstDice = default!;
         private Image secondDice = default!;
+        private Ellipse currPlayerInfo;
         //private List<Ellipse> pawns = default!;
 
         public MainWindow()
@@ -32,6 +34,7 @@ namespace Backgammon
             InitializeComponent();
             gameState = new GameState();
             rand = new Random();
+            currPlayerInfo = new Ellipse();
             //pawns = new List<Ellipse>();
             DrawBoard();
             DrawPawns();
@@ -63,6 +66,20 @@ namespace Backgammon
             MyCanvas.Children.Add(rightPanel);
             Canvas.SetLeft(rightPanel, 140 + 420);
             Canvas.SetTop(rightPanel, 12);
+
+            // info czyj ruch
+            currPlayerInfo = new Ellipse
+            {
+                Width = 35,
+                Height = 35,
+                Stroke = Brushes.Black,
+                StrokeThickness = 3,
+                Fill = gameState.currentPlayer == Player.red ? redPawnColor : whitePawnColor,
+            };
+
+            MyCanvas.Children.Add(currPlayerInfo);
+            Canvas.SetLeft(currPlayerInfo, 630);
+            Canvas.SetTop(currPlayerInfo, 405);
 
             // pola - trójkąty
             for (int i = 0; i < 12; i++)
@@ -97,21 +114,6 @@ namespace Backgammon
                 Canvas.SetLeft(triangle, 70 + (i < 6 ? i : i + 1) * 70);
                 Canvas.SetTop(triangle, 828);
             }
-
-            // pionki
-            // test
-            //Ellipse pawn = new Ellipse
-            //{
-            //    Width = 70,
-            //    Height = 70,
-            //    Stroke = Brushes.Black,
-            //    StrokeThickness = 3,
-            //    Fill = redPawnColor,
-            //};
-
-            //MyCanvas.Children.Add(pawn);
-            //Canvas.SetLeft(pawn, 70);
-            //Canvas.SetTop(pawn, 12);
         }
 
         private void DrawPawns()

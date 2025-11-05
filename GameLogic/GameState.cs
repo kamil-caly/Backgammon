@@ -3,7 +3,7 @@
     public class GameState
 {
         private BoardField[,] board = new BoardField[12, 12];
-        private Player currentPlayer;
+        public Player currentPlayer { get; private set; }
         public int firstDice { get; set; } = 0;
         public int secondDice { get; set; } = 0;
 
@@ -71,6 +71,11 @@
         {
             if (row < 0 || row > 1 || col < 0 || col > 11) return new BoardField(Player.none, 0);
             return board[row, col];
+        }
+
+        public void switchPlayer()
+        {
+            currentPlayer = currentPlayer == Player.red ? Player.white : Player.red;
         }
     }
 }
