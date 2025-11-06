@@ -1,5 +1,6 @@
 ﻿using GameLogic;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -17,25 +18,27 @@ namespace Backgammon
         private readonly SolidColorBrush redPawnColor = new SolidColorBrush(Color.FromRgb(238, 34, 17));
         private readonly SolidColorBrush whitePawnColor = new SolidColorBrush(Color.FromRgb(238, 238, 238));
         private readonly string assetsPath = "assets/";
-
-        private Random rand;
+        private readonly Random rand;
         private const int pawnSize = 70;
         private const int maxPawnLenInCol = 350;
+        private const int triangleFieldLen = 360;
         private const int pawnTopStart = 12;
         private const int pawnDownStart = 758;
-        GameState gameState;
 
+        GameState gameState;
         private Image firstDice = default!;
         private Image secondDice = default!;
         private Ellipse currPlayerInfo;
         private List<Rectangle> possibleMovesMarks;
+        private List<Ellipse> pawns;
+        private Move? currentMove = null;
+        private Ellipse? draggedPawn;
 
         private bool isDragging = false;
         private bool isCapturingPawn = false;
         private Point mouseOffsetForDragLogic;
         private Point mouseOffsetWhenPawnClick;
-        private Ellipse? draggedPawn;
-
+        
         public MainWindow()
         {
             InitializeComponent();
@@ -44,6 +47,7 @@ namespace Backgammon
             rand = new Random();
             currPlayerInfo = new Ellipse();
             possibleMovesMarks = new List<Rectangle>();
+            pawns = new List<Ellipse>();
             DrawBoard();
             DrawPawns();
             DrawDice();
@@ -126,7 +130,7 @@ namespace Backgammon
                     {
                         new Point(0, 0),
                         new Point(70, 0),
-                        new Point(35, 360)
+                        new Point(35, triangleFieldLen)
                     }
                 };
                 MyCanvas.Children.Add(triangle);
@@ -141,7 +145,7 @@ namespace Backgammon
                     {
                         new Point(0, 0),
                         new Point(70, 0),
-                        new Point(35, -360)
+                        new Point(35, -triangleFieldLen)
                     }
                 };
                 MyCanvas.Children.Add(triangle);
@@ -152,20 +156,28 @@ namespace Backgammon
 
         private void DrawPawns()
         {
+            // usuwamy poprzednio dodane piony z Canvas'a
+            pawns.ForEach(MyCanvas.Children.Remove);
+            pawns.Clear();
+
             for (int c = 0; c < 12; c++)
             {
                 //góra
                 BoardField fieldTop = gameState.GetBoardField(new Position(0, c));
                 for (int a = 1; a <= fieldTop.amount; a++)
                 {
-                    MyCanvas.Children.Add(CreatePawn(c, a, fieldTop.amount, fieldTop.player, true));
+                    var upPawn = CreatePawn(c, a, fieldTop.amount, fieldTop.player, true);
+                    pawns.Add(upPawn);
+                    MyCanvas.Children.Add(upPawn);
                 }
 
                 //dół
                 BoardField fieldBottom = gameState.GetBoardField(new Position(1, c));
                 for (int a = 1; a <= fieldBottom.amount; a++)
                 {
-                    MyCanvas.Children.Add(CreatePawn(c, a, fieldBottom.amount, fieldBottom.player, false));
+                    var downPawn = CreatePawn(c, a, fieldBottom.amount, fieldBottom.player, false);
+                    pawns.Add(downPawn);
+                    MyCanvas.Children.Add(downPawn);
                 }
             }
         }
@@ -241,7 +253,7 @@ namespace Backgammon
                 Rectangle moveMark = new Rectangle
                 {
                     Width = pawnSize,
-                    Height = 360,
+                    Height = triangleFieldLen,
                     Stroke = Brushes.White,
                     StrokeThickness = 2,
                     StrokeDashArray = new DoubleCollection { 1, 1 }, // 1j kreska, 1j przerwa
@@ -252,6 +264,20 @@ namespace Backgammon
                 Canvas.SetTop(moveMark, move.row == 0 ? pawnTopStart : pawnDownStart - 290);
                 MyCanvas.Children.Add(moveMark);
                 possibleMovesMarks.Add(moveMark);
+            }
+
+            // ruch przypisany do zmiennej ma być ruchem o większym zasięgu (jeśli dwa to wybieramy odpowiedni)
+            if (possibleMoves != null)
+            {
+                if (possibleMoves.Count() == 1) currentMove = new Move(choosenPawn, possibleMoves.First());
+                else currentMove = new Move(
+                         choosenPawn,
+                         gameState.GetLongestMove(choosenPawn, possibleMoves.ElementAt(0), possibleMoves.ElementAt(1))
+                     );
+            }
+            else
+            {
+                currentMove = null;
             }
         }
         #endregion
@@ -288,8 +314,18 @@ namespace Backgammon
                 isDragging = false;
                 Panel.SetZIndex(draggedPawn, 0);
                 Point position = e.GetPosition(MyCanvas);
-                if (mouseOffsetWhenPawnClick.X == position.X && mouseOffsetWhenPawnClick.Y == position.Y) 
-                    Debug.Write("Nastąpiło kliknięcie na pionek");
+
+                // samo kliknięcie
+                if (mouseOffsetWhenPawnClick.X == position.X && mouseOffsetWhenPawnClick.Y == position.Y)
+                {
+                    Debug.Write("Nastąpiło kliknięcie na piona");
+                    if (currentMove != null)
+                    {
+                        gameState.MakeMove(currentMove);
+                        DrawPawns();
+                    }
+                }
+                    
                 draggedPawn.ReleaseMouseCapture();
                 draggedPawn = null;
             }

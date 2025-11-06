@@ -2,12 +2,13 @@
 {
     public class Move
     {
-        private BoardField[,] board = new BoardField[12, 12];
-        public Move(BoardField[,] board)
-        {
-            this.board = board;
-        }
+        public Position from { get; }
+        public Position to { get; }
 
-        
+        public Move(Position from, Position to)
+        {
+            this.from = from;
+            this.to = to;
+        }
     }
 }

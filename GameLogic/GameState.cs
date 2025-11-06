@@ -3,14 +3,11 @@
     public class GameState
 {
         private BoardField[,] board = new BoardField[12, 12];
-
-        private Move move;
         public Player currentPlayer { get; private set; }
 
         public GameState()
         {
             InitBoard();
-            move = new Move(board);
             currentPlayer = Player.red;
         }
 
@@ -22,11 +19,6 @@
                 {
                     board[0, c] = new BoardField(Player.red, 2);
                     board[1, c] = new BoardField(Player.white, 2);
-                }
-                else if (c == 8)
-                {
-                    board[1, c] = new BoardField(Player.none, 0);
-                    board[0, c] = new BoardField(Player.red, 3);
                 }
                 else if (c == 5)
                 {
@@ -51,12 +43,12 @@
             }
         }
 
-        //public bool setBoardField(int pos.row, int pos.col, Player player, int amount = 0)
-        //{
-        //    if (pos.row < 0 || pos.row > 1 || pos.col < 0 || pos.col > 11) return false;
-        //    board[pos.row, pos.col] = new BoardField(player, amount);
-        //    return true;
-        //}
+        public bool SetBoardField(Position pos, Player player, int amount)
+        {
+            if (pos.row < 0 || pos.row > 1 || pos.col < 0 || pos.col > 11) return false;
+            board[pos.row, pos.col] = new BoardField(player, amount);
+            return true;
+        }
 
         public void SwitchPlayer()
         {
@@ -130,6 +122,42 @@
                 && possibleMoves[0].col == possibleMoves[1].col
             ) return possibleMoves.Take(1).ToList();
             return possibleMoves;
+        }
+
+        public Position GetLongestMove(Position from, Position to, Position to2)
+        {
+            if (currentPlayer == Player.red)
+            {
+                if (from.row == 0)
+                {
+                    if (to.row == 1 && to2.row == 0) return to;
+                    else if (to.row == 0 && to2.row == 1) return to2;
+                    else if (to.row == 0 && to2.row == 0) return to.col > to2.col ? to : to2;
+                }
+                
+                return to.col < to2.col ? to : to2;
+            }
+            else
+            {
+                if (from.row == 1)
+                {
+                    if (to.row == 0 && to2.row == 1) return to;
+                    else if (to.row == 1 && to2.row == 0) return to2;
+                    else if (to.row == 1 && to2.row == 1) return to.col > to2.col ? to : to2;
+                }
+
+                return to.col < to2.col ? to : to2;
+            }
+        }
+
+        public void MakeMove(Move move)
+        {
+            // from
+            int restAmount = GetBoardField(move.from).amount - 1;
+            SetBoardField(move.from, restAmount > 0 ? currentPlayer : Player.none, restAmount);
+
+            // to
+            SetBoardField(move.to, currentPlayer, GetBoardField(move.to).amount + 1);
         }
     }
 }
