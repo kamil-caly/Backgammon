@@ -267,7 +267,7 @@ namespace Backgammon
             }
 
             // ruch przypisany do zmiennej ma być ruchem o większym zasięgu (jeśli dwa to wybieramy odpowiedni)
-            if (possibleMoves != null)
+            if (possibleMoves.Count() > 0)
             {
                 if (possibleMoves.Count() == 1) currentMove = new Move(choosenPawn, possibleMoves.First());
                 else currentMove = new Move(
@@ -285,7 +285,8 @@ namespace Backgammon
         private void Pawn_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             draggedPawn = sender as Ellipse;
-            if (draggedPawn != null)
+            var currPlayerColor = gameState.currentPlayer == Player.red ? redPawnColor : whitePawnColor;
+            if (draggedPawn != null && draggedPawn.Fill == currPlayerColor)
             {
                 isDragging = true;
                 Panel.SetZIndex(draggedPawn, 1000);

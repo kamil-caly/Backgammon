@@ -68,6 +68,11 @@
             return false;
         }
 
+        public bool IsCurrPlayerHere(Position pos)
+        {
+            return GetBoardField(pos).player == currentPlayer;
+        }
+
         private bool CanMove(Position pos)
         {
             if (this.IsEmpty(pos)) return true;
