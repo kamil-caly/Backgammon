@@ -31,10 +31,13 @@ namespace Backgammon
         private List<Rectangle> possibleMovesMarks;
         private List<Ellipse> pawns;
         private Move? currentMove = null;
+        private int currentMoveDice = 0;
         private Ellipse? draggedPawn;
 
         private bool isDragging = false;
         private bool isCapturingPawn = false;
+        private bool firstDiceUsed = false;
+        private bool secondDiceUsed = false;
         private Point mouseOffsetForDragLogic;
         private Point mouseOffsetWhenPawnClick;
         
@@ -220,6 +223,12 @@ namespace Backgammon
         {
             MyCanvas.Children.Add(CreateDice(690, 385, "d1", ref firstDice));
             MyCanvas.Children.Add(CreateDice(790, 385, "d2", ref secondDice));
+
+            int amount = (int)firstDice.DataContext;
+            int amount2 = (int)secondDice.DataContext;
+
+            if (amount == amount2) gameState.movesForCurrPlayerLeft = 4;
+            else gameState.movesForCurrPlayerLeft = 2;
         }
 
         private Image CreateDice(double left, double top, string name, ref Image dice)
@@ -245,13 +254,17 @@ namespace Backgammon
 
         private void MarkPossibleMoves(Position choosenPawn)
         {
-            var possibleMoves = gameState.GetPossibleMoves(choosenPawn, (int)firstDice.DataContext, (int)secondDice.DataContext);
+            int amount = (int)firstDice.DataContext;
+            int amount2 = (int)secondDice.DataContext;
+            var possibleMoves = gameState.GetPossibleMoves(choosenPawn, amount, amount2);
 
+            int m = 1;
             foreach (var move in possibleMoves)
             {
                 Rectangle moveMark = new Rectangle
                 {
-                    DataContext = new Position(move.row, move.col),
+                    DataContext = move,
+                    Name = possibleMoves.Count() == 1 ? "" : $"d{m}",
                     Width = pawnSize,
                     Height = triangleFieldLen,
                     Stroke = Brushes.White,
@@ -260,20 +273,22 @@ namespace Backgammon
                     Fill = Brushes.Transparent
                 };
 
-                Canvas.SetLeft(moveMark, pawnSize + (move.col < 6 ? move.col : move.col + 1) * pawnSize);
-                Canvas.SetTop(moveMark, move.row == 0 ? pawnTopStart : pawnDownStart - 290);
+                Canvas.SetLeft(moveMark, pawnSize + (move.to.col < 6 ? move.to.col : move.to.col + 1) * pawnSize);
+                Canvas.SetTop(moveMark, move.to.row == 0 ? pawnTopStart : pawnDownStart - 290);
                 MyCanvas.Children.Add(moveMark);
                 possibleMovesMarks.Add(moveMark);
+                m++;
             }
 
             // ruch przypisany do zmiennej ma być ruchem o większym zasięgu (jeśli dwa to wybieramy odpowiedni)
             if (possibleMoves.Count() > 0)
             {
-                if (possibleMoves.Count() == 1) currentMove = new Move(choosenPawn, possibleMoves.First());
-                else currentMove = new Move(
-                         choosenPawn,
-                         gameState.GetLongestMove(choosenPawn, possibleMoves.ElementAt(0), possibleMoves.ElementAt(1))
-                     );
+                if (possibleMoves.Count() == 1) currentMove = possibleMoves.First();
+                else
+                {
+                    currentMove = gameState.GetLongestMove(choosenPawn, possibleMoves.ElementAt(0).to, possibleMoves.ElementAt(1).to);
+                    currentMoveDice = currentMove.to == possibleMoves.ElementAt(0).to ? 1 : 2;
+                }
             }
             else
             {
@@ -299,6 +314,19 @@ namespace Backgammon
             {
                 return false;
             }
+        }
+
+        private void NextPlayerTurn()
+        {
+            int amount = rand.Next(1, 7);
+            int amount2 = rand.Next(1, 7);
+            firstDice.DataContext = amount;
+            secondDice.DataContext = amount2;
+            if (amount == amount2) gameState.movesForCurrPlayerLeft = 4;
+            else gameState.movesForCurrPlayerLeft = 2;
+
+            gameState.SwitchPlayer();
+            currPlayerInfo.Fill = gameState.currentPlayer == Player.red ? redPawnColor : whitePawnColor;
         }
 
         private void Pawn_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -347,12 +375,29 @@ namespace Backgammon
                 isDragging = false;
                 Panel.SetZIndex(draggedPawn, 0);
                 Point position = e.GetPosition(MyCanvas);
+                int amount = (int)firstDice.DataContext;
+                int amount2 = (int)secondDice.DataContext;
 
                 // samo kliknięcie
                 if (mouseOffsetWhenPawnClick.X == position.X && mouseOffsetWhenPawnClick.Y == position.Y)
                 {
                     Debug.Write("Nastąpiło kliknięcie na piona");
-                    if (currentMove != null) gameState.MakeMove(currentMove);
+                    if (currentMove != null)
+                    {
+                        gameState.MakeMove(currentMove);
+                        
+                    }
+
+                    //if (currentMove != null)
+                    //{
+                    //    gameState.MakeMove(currentMove);
+                    //    if (amount != amount2)
+                    //    {
+                    //        if (currentMove.dice == 1) firstDice.DataContext = new DiceContext(d1.amount, false);
+                    //        else secondDice.DataContext = new DiceContext(d2.amount, false);
+                    //    }
+                    //    if (gameState.movesForCurrPlayerLeft <= 0) NextPlayerTurn();
+                    //}
                 }
                 // przeciągnięcie na inne pole
                 else
@@ -361,7 +406,15 @@ namespace Backgammon
                     {
                         if (IsDraggedPawnInsideMark(mark))
                         {
-                            gameState.MakeMove(new Move((Position)draggedPawn.DataContext, (Position)mark.DataContext));
+                            gameState.MakeMove((Move)mark.DataContext);
+                            //Move markMove = (Move)mark.DataContext;
+                            //gameState.MakeMove(markMove);
+                            //if (d1.amount != d2.amount)
+                            //{
+                            //    if (markMove.dice == 1) firstDice.DataContext = new DiceContext(d1.amount, false);
+                            //    else secondDice.DataContext = new DiceContext(d2.amount, false);
+                            //}
+                            //if (gameState.movesForCurrPlayerLeft <= 0) NextPlayerTurn();
                         }
                     }
                 }

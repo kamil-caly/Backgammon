@@ -3,6 +3,7 @@
     public class GameState
 {
         private BoardField[,] board = new BoardField[12, 12];
+        public int movesForCurrPlayerLeft { get; set; }
         public Player currentPlayer { get; private set; }
 
         public GameState()
@@ -83,6 +84,9 @@
 
         private Position? CalculateNextField(Position pos, int amount)
         {
+            // jeżeli amount jest spoza 1-6 to zwracamy null'a
+            if (amount < 1 || amount > 6) return null;
+
             if ((currentPlayer == Player.red && pos.row == 0) || (currentPlayer == Player.white && pos.row == 1))
             {
                 int newCol = pos.col + amount;
@@ -112,47 +116,51 @@
             }
         }
 
-        public IEnumerable<Position> GetPossibleMoves(Position pos, int firstDice, int secondDice)
+        public IEnumerable<Move> GetPossibleMoves(Position pos, int firstDice, int secondDice)
         {
-            List<Position> possibleMoves = new List<Position>();
+            List<Move> possibleMoves = new List<Move>();
 
-            var nextFieldFirstDice = CalculateNextField(pos, firstDice); 
-            var nextFieldSecondDice = CalculateNextField(pos, secondDice);
+            Position? nextFieldFirstDice = CalculateNextField(pos, firstDice); 
+            Position? nextFieldSecondDice = CalculateNextField(pos, secondDice);
 
-            if (nextFieldFirstDice != null && CanMove(nextFieldFirstDice)) possibleMoves.Add(nextFieldFirstDice);
-            if (nextFieldSecondDice != null && CanMove(nextFieldSecondDice)) possibleMoves.Add(nextFieldSecondDice);
+            if (nextFieldFirstDice != null && CanMove(nextFieldFirstDice)) possibleMoves.Add(new Move(pos, nextFieldFirstDice));
+            if (nextFieldSecondDice != null && CanMove(nextFieldSecondDice)) possibleMoves.Add(new Move(pos, nextFieldSecondDice));
 
             if (possibleMoves.Count == 2
-                && possibleMoves[0].row == possibleMoves[1].row
-                && possibleMoves[0].col == possibleMoves[1].col
+                && possibleMoves[0].to.row == possibleMoves[1].to.row
+                && possibleMoves[0].to.col == possibleMoves[1].to.col
             ) return possibleMoves.Take(1).ToList();
+
             return possibleMoves;
         }
 
-        public Position GetLongestMove(Position from, Position to, Position to2)
+        public Move GetLongestMove(Position from, Position to, Position to2)
         {
+            Position finalTo;
             if (currentPlayer == Player.red)
             {
                 if (from.row == 0)
                 {
-                    if (to.row == 1 && to2.row == 0) return to;
-                    else if (to.row == 0 && to2.row == 1) return to2;
-                    else if (to.row == 0 && to2.row == 0) return to.col > to2.col ? to : to2;
+                    if (to.row == 1 && to2.row == 0) finalTo = to;
+                    else if (to.row == 0 && to2.row == 1) finalTo = to2;
+                    else if (to.row == 0 && to2.row == 0) finalTo = to.col > to2.col ? to : to2;
+                    else finalTo = to.col < to2.col ? to : to2;
                 }
-                
-                return to.col < to2.col ? to : to2;
+                else finalTo = to.col < to2.col ? to : to2;
             }
             else
             {
                 if (from.row == 1)
                 {
-                    if (to.row == 0 && to2.row == 1) return to;
-                    else if (to.row == 1 && to2.row == 0) return to2;
-                    else if (to.row == 1 && to2.row == 1) return to.col > to2.col ? to : to2;
+                    if (to.row == 0 && to2.row == 1) finalTo = to;
+                    else if (to.row == 1 && to2.row == 0) finalTo = to2;
+                    else if (to.row == 1 && to2.row == 1) finalTo = to.col > to2.col ? to : to2;
+                    else finalTo = to.col < to2.col ? to : to2;
                 }
-
-                return to.col < to2.col ? to : to2;
+                else finalTo = to.col < to2.col ? to : to2;
             }
+
+            return new Move(from, finalTo);
         }
 
         public void MakeMove(Move move)
@@ -163,6 +171,8 @@
 
             // to
             SetBoardField(move.to, currentPlayer, GetBoardField(move.to).amount + 1);
+
+            movesForCurrPlayerLeft--;
         }
     }
 }
