@@ -212,7 +212,7 @@ namespace Backgammon
             else
             {
                 double space = (double)(maxPawnLenInCol - pawnSize) / (double)(amount - 1);
-                if (isTop) top = top + (int)Math.Round((who - 1) * space);
+                if (isTop) top = pawnTopStart + top + (int)Math.Round((who - 1) * space);
                 else top = pawnDownStart - (int)Math.Round((who - 1) * space);
             }
 
