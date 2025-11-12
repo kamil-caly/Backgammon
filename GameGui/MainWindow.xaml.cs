@@ -31,13 +31,13 @@ namespace Backgammon
         private List<Rectangle> possibleMovesMarks;
         private List<Ellipse> pawns;
         private Move? currentMove = null;
-        private int currentMoveDice = 0;
         private Ellipse? draggedPawn;
 
         private bool isDragging = false;
-        private bool isCapturingPawn = false;
+        private Position? capturingPawn = null;
         private bool firstDiceUsed = false;
         private bool secondDiceUsed = false;
+        private int movesForCurrPlayerLeft = 0;
         private Point mouseOffsetForDragLogic;
         private Point mouseOffsetWhenPawnClick;
         
@@ -60,19 +60,22 @@ namespace Backgammon
             var hovered = e.OriginalSource as Ellipse;
             if (hovered != null
                 && (string)hovered.Tag == "Pawn"
-                && hovered.Fill == (gameState.currentPlayer == Player.red ? redPawnColor : whiteFieldColor)
+                && hovered.Fill == (gameState.currentPlayer == Player.red ? redPawnColor : whitePawnColor)
             )
             {
-                if (!isCapturingPawn)
+                Position hoveredLeft = (Position)hovered.DataContext;
+                if (capturingPawn == null || hoveredLeft.col != capturingPawn.col)
                 {
-                    isCapturingPawn = true;
+                    capturingPawn = hoveredLeft;
                     Debug.WriteLine($"Najechano na pionek {rand.Next(1000)}");
+                    possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
+                    possibleMovesMarks.Clear();
                     MarkPossibleMoves((Position)hovered.DataContext);
                 }
             }
             else
             {
-                isCapturingPawn = false;
+                capturingPawn = null;
                 possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
                 possibleMovesMarks.Clear();
             }
@@ -227,13 +230,13 @@ namespace Backgammon
             int amount = (int)firstDice.DataContext;
             int amount2 = (int)secondDice.DataContext;
 
-            if (amount == amount2) gameState.movesForCurrPlayerLeft = 4;
-            else gameState.movesForCurrPlayerLeft = 2;
+            if (amount == amount2) movesForCurrPlayerLeft = 4;
+            else movesForCurrPlayerLeft = 2;
         }
 
         private Image CreateDice(double left, double top, string name, ref Image dice)
         {
-            int amount = rand.Next(1, 7);
+            int amount = 4; //rand.Next(1, 7);
 
             dice = new Image
             {
@@ -241,7 +244,7 @@ namespace Backgammon
                 Width = 74,
                 Height = 74,
                 Name = name,
-                Source = new BitmapImage(new Uri(assetsPath + GetDicePath(amount), UriKind.Relative))
+                Source = GetDiceBitmapImg(amount)
             };
 
             dice.RenderTransform = new RotateTransform(15, dice.Width / 2, dice.Height / 2);
@@ -254,17 +257,16 @@ namespace Backgammon
 
         private void MarkPossibleMoves(Position choosenPawn)
         {
-            int amount = (int)firstDice.DataContext;
-            int amount2 = (int)secondDice.DataContext;
+            int amount = !firstDiceUsed ? (int)firstDice.DataContext : -1;
+            int amount2 = !secondDiceUsed ? (int)secondDice.DataContext : -1;
             var possibleMoves = gameState.GetPossibleMoves(choosenPawn, amount, amount2);
 
-            int m = 1;
             foreach (var move in possibleMoves)
             {
                 Rectangle moveMark = new Rectangle
                 {
                     DataContext = move,
-                    Name = possibleMoves.Count() == 1 ? "" : $"d{m}",
+                    Name = $"d{move.dice}",
                     Width = pawnSize,
                     Height = triangleFieldLen,
                     Stroke = Brushes.White,
@@ -277,7 +279,6 @@ namespace Backgammon
                 Canvas.SetTop(moveMark, move.to.row == 0 ? pawnTopStart : pawnDownStart - 290);
                 MyCanvas.Children.Add(moveMark);
                 possibleMovesMarks.Add(moveMark);
-                m++;
             }
 
             // ruch przypisany do zmiennej ma być ruchem o większym zasięgu (jeśli dwa to wybieramy odpowiedni)
@@ -287,7 +288,7 @@ namespace Backgammon
                 else
                 {
                     currentMove = gameState.GetLongestMove(choosenPawn, possibleMoves.ElementAt(0).to, possibleMoves.ElementAt(1).to);
-                    currentMoveDice = currentMove.to == possibleMoves.ElementAt(0).to ? 1 : 2;
+                    currentMove.SetDice(currentMove.to == possibleMoves.ElementAt(0).to ? 1 : 2);
                 }
             }
             else
@@ -321,12 +322,16 @@ namespace Backgammon
             int amount = rand.Next(1, 7);
             int amount2 = rand.Next(1, 7);
             firstDice.DataContext = amount;
+            firstDice.Source = GetDiceBitmapImg(amount);
             secondDice.DataContext = amount2;
-            if (amount == amount2) gameState.movesForCurrPlayerLeft = 4;
-            else gameState.movesForCurrPlayerLeft = 2;
+            secondDice.Source = GetDiceBitmapImg(amount2);
+            if (amount == amount2) movesForCurrPlayerLeft = 4;
+            else movesForCurrPlayerLeft = 2;
 
             gameState.SwitchPlayer();
             currPlayerInfo.Fill = gameState.currentPlayer == Player.red ? redPawnColor : whitePawnColor;
+            firstDiceUsed = false;
+            secondDiceUsed = false;
         }
 
         private void Pawn_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -385,19 +390,13 @@ namespace Backgammon
                     if (currentMove != null)
                     {
                         gameState.MakeMove(currentMove);
-                        
+                        movesForCurrPlayerLeft--;
+                        if (currentMove.dice != 0)
+                        {
+                            if (currentMove.dice == 1) firstDiceUsed = true;
+                            else secondDiceUsed = true;
+                        }
                     }
-
-                    //if (currentMove != null)
-                    //{
-                    //    gameState.MakeMove(currentMove);
-                    //    if (amount != amount2)
-                    //    {
-                    //        if (currentMove.dice == 1) firstDice.DataContext = new DiceContext(d1.amount, false);
-                    //        else secondDice.DataContext = new DiceContext(d2.amount, false);
-                    //    }
-                    //    if (gameState.movesForCurrPlayerLeft <= 0) NextPlayerTurn();
-                    //}
                 }
                 // przeciągnięcie na inne pole
                 else
@@ -407,14 +406,10 @@ namespace Backgammon
                         if (IsDraggedPawnInsideMark(mark))
                         {
                             gameState.MakeMove((Move)mark.DataContext);
-                            //Move markMove = (Move)mark.DataContext;
-                            //gameState.MakeMove(markMove);
-                            //if (d1.amount != d2.amount)
-                            //{
-                            //    if (markMove.dice == 1) firstDice.DataContext = new DiceContext(d1.amount, false);
-                            //    else secondDice.DataContext = new DiceContext(d2.amount, false);
-                            //}
-                            //if (gameState.movesForCurrPlayerLeft <= 0) NextPlayerTurn();
+                            movesForCurrPlayerLeft--;
+
+                            if (mark.Name.Contains("1")) firstDiceUsed = true;
+                            else if (mark.Name.Contains("2")) secondDiceUsed = true;
                         }
                     }
                 }
@@ -422,21 +417,25 @@ namespace Backgammon
                 draggedPawn.ReleaseMouseCapture();
                 draggedPawn = null;
                 DrawPawns();
+                if (movesForCurrPlayerLeft <= 0) NextPlayerTurn();
             }
         }
 
-        private string GetDicePath(int amount)
+        private BitmapImage GetDiceBitmapImg(int amount)
         {
+            string path = "";
             switch (amount)
             {
-                case 1: return "dice-one.png";
-                case 2: return "dice-two.png";
-                case 3: return "dice-three.png";
-                case 4: return "dice-four.png";
-                case 5: return "dice-five.png";
-                case 6: return "dice-six.png";
-                default: return "";
+                case 1: path = "dice-one.png"; break;
+                case 2: path = "dice-two.png"; break;
+                case 3: path = "dice-three.png"; break;
+                case 4: path = "dice-four.png"; break;
+                case 5: path = "dice-five.png"; break;
+                case 6: path = "dice-six.png"; break;
+                default: break;
             }
+
+            return new BitmapImage(new Uri(assetsPath + path, UriKind.Relative));
         }
     }
 }

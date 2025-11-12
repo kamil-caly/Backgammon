@@ -3,7 +3,6 @@
     public class GameState
 {
         private BoardField[,] board = new BoardField[12, 12];
-        public int movesForCurrPlayerLeft { get; set; }
         public Player currentPlayer { get; private set; }
 
         public GameState()
@@ -123,13 +122,13 @@
             Position? nextFieldFirstDice = CalculateNextField(pos, firstDice); 
             Position? nextFieldSecondDice = CalculateNextField(pos, secondDice);
 
-            if (nextFieldFirstDice != null && CanMove(nextFieldFirstDice)) possibleMoves.Add(new Move(pos, nextFieldFirstDice));
-            if (nextFieldSecondDice != null && CanMove(nextFieldSecondDice)) possibleMoves.Add(new Move(pos, nextFieldSecondDice));
+            if (nextFieldFirstDice != null && CanMove(nextFieldFirstDice)) possibleMoves.Add(new Move(pos, nextFieldFirstDice, 1));
+            if (nextFieldSecondDice != null && CanMove(nextFieldSecondDice)) possibleMoves.Add(new Move(pos, nextFieldSecondDice, 2));
 
             if (possibleMoves.Count == 2
                 && possibleMoves[0].to.row == possibleMoves[1].to.row
                 && possibleMoves[0].to.col == possibleMoves[1].to.col
-            ) return possibleMoves.Take(1).ToList();
+            ) return possibleMoves.Take(1).ToList().Select(m => { m.SetDice(0); return m; });
 
             return possibleMoves;
         }
@@ -171,8 +170,6 @@
 
             // to
             SetBoardField(move.to, currentPlayer, GetBoardField(move.to).amount + 1);
-
-            movesForCurrPlayerLeft--;
         }
     }
 }
