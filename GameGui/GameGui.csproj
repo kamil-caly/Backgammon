@@ -14,6 +14,8 @@
     <None Remove="assets\dice-one.png" />
     <None Remove="assets\dice-three.png" />
     <None Remove="assets\dice-two.png" />
+    <None Remove="assets\sad_red.png" />
+    <None Remove="assets\sad_white.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -40,6 +42,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="assets\dice-three.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="assets\sad_red.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="assets\sad_white.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
   </ItemGroup>

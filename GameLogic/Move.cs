@@ -2,11 +2,11 @@
 {
     public class Move
     {
-        public Position from { get; }
+        public Position? from { get; }
         public Position to { get; }
         public int dice { get; private set; }
 
-        public Move(Position from, Position to, int dice = 0)
+        public Move(Position? from, Position to, int dice = 0)
         {
             this.from = from;
             this.to = to;

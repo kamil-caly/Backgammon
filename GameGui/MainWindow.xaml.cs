@@ -1,11 +1,13 @@
 ﻿using GameLogic;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Xml.Linq;
 
 namespace Backgammon
 {
@@ -30,13 +32,16 @@ namespace Backgammon
         private Ellipse currPlayerInfo;
         private List<Rectangle> possibleMovesMarks;
         private List<Ellipse> pawns;
+        private List<Ellipse> beatenPawns;
         private Move? currentMove = null;
         private Ellipse? draggedPawn;
+        private Image sadFace = default!;
 
         private bool isDragging = false;
         private Position? capturingPawn = null;
         private bool firstDiceUsed = false;
         private bool secondDiceUsed = false;
+        private bool blockAnyMove = false;
         private int movesForCurrPlayerLeft = 0;
         private Point mouseOffsetForDragLogic;
         private Point mouseOffsetWhenPawnClick;
@@ -50,6 +55,7 @@ namespace Backgammon
             currPlayerInfo = new Ellipse();
             possibleMovesMarks = new List<Rectangle>();
             pawns = new List<Ellipse>();
+            beatenPawns = new List<Ellipse>();
             DrawBoard();
             DrawPawns();
             DrawDice();
@@ -57,6 +63,10 @@ namespace Backgammon
 
         private void MyCanvas_MouseMove(object sender, MouseEventArgs e)
         {
+            if (blockAnyMove) return;
+            // jeżeli zbite piony to najpierw trzeba je wprowadzić na planszę
+            if (gameState.beatenPawns[gameState.currentPlayer] > 0) return;
+
             var hovered = e.OriginalSource as Ellipse;
             if (hovered != null
                 && (string)hovered.Tag == "Pawn"
@@ -68,8 +78,6 @@ namespace Backgammon
                 {
                     capturingPawn = hoveredLeft;
                     Debug.WriteLine($"Najechano na pionek {rand.Next(1000)}");
-                    possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
-                    possibleMovesMarks.Clear();
                     MarkPossibleMoves((Position)hovered.DataContext);
                 }
             }
@@ -162,7 +170,10 @@ namespace Backgammon
             // usuwamy poprzednio dodane piony z Canvas'a
             pawns.ForEach(MyCanvas.Children.Remove);
             pawns.Clear();
+            beatenPawns.ForEach(MyCanvas.Children.Remove);
+            beatenPawns.Clear();
 
+            // plansza
             for (int c = 0; c < 12; c++)
             {
                 //góra
@@ -183,6 +194,10 @@ namespace Backgammon
                     MyCanvas.Children.Add(downPawn);
                 }
             }
+
+            // zbite piony
+            CreateBeatenPawns(Player.red);
+            CreateBeatenPawns(Player.white);
         }
 
         private Ellipse CreatePawn(int left, int who, int amount, Player player, bool isTop)
@@ -222,6 +237,44 @@ namespace Backgammon
             return pawn;
         }
 
+        private void CreateBeatenPawns(Player player)
+        {
+            int amount = gameState.beatenPawns[player];
+            for (int i = 1; i <= amount; i++)
+            {
+                Ellipse bPawn = new Ellipse
+                {
+                    Width = pawnSize,
+                    Height = pawnSize,
+                    Stroke = Brushes.Black,
+                    StrokeThickness = 3,
+                    Fill = player == Player.red ? redPawnColor : whitePawnColor,
+                };
+
+                int top = 0;
+                if (amount <= 5)
+                {
+                    if (player == Player.red) top = pawnTopStart + (i - 1) * pawnSize;
+                    else top = pawnDownStart - (i - 1) * pawnSize;
+                }
+                else
+                {
+                    double space = (double)(maxPawnLenInCol - pawnSize) / (double)(amount - 1);
+                    if (player == Player.red) top = pawnTopStart + top + (int)Math.Round((i - 1) * space);
+                    else top = pawnDownStart - (int)Math.Round((i - 1) * space);
+                }
+
+                bPawn.MouseLeftButtonDown += Pawn_MouseLeftButtonDown;
+                bPawn.MouseMove += Pawn_MouseMove;
+                bPawn.MouseLeftButtonUp += Pawn_MouseLeftButtonUp;
+
+                Canvas.SetLeft(bPawn, 7 * pawnSize);
+                Canvas.SetTop(bPawn, top);
+                MyCanvas.Children.Add(bPawn);
+                beatenPawns.Add(bPawn);
+            }
+        }
+
         private void DrawDice()
         {
             MyCanvas.Children.Add(CreateDice(690, 385, "d1", ref firstDice));
@@ -236,7 +289,7 @@ namespace Backgammon
 
         private Image CreateDice(double left, double top, string name, ref Image dice)
         {
-            int amount = 4; //rand.Next(1, 7);
+            int amount = rand.Next(1, 7);
 
             dice = new Image
             {
@@ -255,11 +308,23 @@ namespace Backgammon
             return dice;
         }
 
-        private void MarkPossibleMoves(Position choosenPawn)
+        private void MarkPossibleMoves(Position? choosenPawn)
         {
+            possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
+            possibleMovesMarks.Clear();
+
             int amount = !firstDiceUsed ? (int)firstDice.DataContext : -1;
             int amount2 = !secondDiceUsed ? (int)secondDice.DataContext : -1;
-            var possibleMoves = gameState.GetPossibleMoves(choosenPawn, amount, amount2);
+
+            IEnumerable<Move> possibleMoves;
+            if (choosenPawn != null)
+            {
+                possibleMoves = gameState.GetPossibleMoves(choosenPawn, amount, amount2);
+            }
+            else
+            {
+                possibleMoves = gameState.GetPossibleBackOnBoardMoves(amount, amount2);
+            }
 
             foreach (var move in possibleMoves)
             {
@@ -272,7 +337,8 @@ namespace Backgammon
                     Stroke = Brushes.White,
                     StrokeThickness = 2,
                     StrokeDashArray = new DoubleCollection { 1, 1.5 }, // 1j kreska, 1j przerwa
-                    Fill = Brushes.Transparent
+                    Fill = Brushes.Transparent,
+                    Cursor = Cursors.Hand
                 };
 
                 Canvas.SetLeft(moveMark, pawnSize + (move.to.col < 6 ? move.to.col : move.to.col + 1) * pawnSize);
@@ -296,6 +362,20 @@ namespace Backgammon
                 currentMove = null;
             }
         }
+
+        private void DrawSadFace()
+        {
+            sadFace = new Image
+            {
+                Width = 55,
+                Height = 55,
+                Source = GetFaceBitmapImg()
+            };
+
+            Canvas.SetLeft(sadFace, 890);
+            Canvas.SetTop(sadFace, 400);
+            MyCanvas.Children.Add(sadFace);
+        }
         #endregion
 
         private bool IsDraggedPawnInsideMark(Rectangle mark)
@@ -317,7 +397,7 @@ namespace Backgammon
             }
         }
 
-        private void NextPlayerTurn()
+        private async Task NextPlayerTurn()
         {
             int amount = rand.Next(1, 7);
             int amount2 = rand.Next(1, 7);
@@ -332,11 +412,38 @@ namespace Backgammon
             currPlayerInfo.Fill = gameState.currentPlayer == Player.red ? redPawnColor : whitePawnColor;
             firstDiceUsed = false;
             secondDiceUsed = false;
+
+            if (!gameState.IsAnyMove(amount, amount2))
+            {
+                DrawSadFace();
+                blockAnyMove = true;
+                possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
+                possibleMovesMarks.Clear();
+                await Task.Delay(3000);
+                blockAnyMove = false;
+                MyCanvas.Children.Remove(sadFace);
+                await NextPlayerTurn();
+                return;
+            }
+
+            // wyprowadzamy zbite piony jeśli są
+            if (gameState.beatenPawns[gameState.currentPlayer] > 0)
+            {
+                MarkPossibleMoves(null);
+            }
         }
 
         private void Pawn_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            if (blockAnyMove) return;
+
             draggedPawn = sender as Ellipse;
+            // wychodzimy z metody gdy kliknięty inny pion niż zbity
+            if (gameState.beatenPawns[gameState.currentPlayer] > 0 && Canvas.GetLeft(draggedPawn) != 7 * pawnSize)
+            {
+                return;
+            }
+
             var currPlayerColor = gameState.currentPlayer == Player.red ? redPawnColor : whitePawnColor;
             if (draggedPawn != null && draggedPawn.Fill == currPlayerColor)
             {
@@ -373,7 +480,7 @@ namespace Backgammon
             }
         }
 
-        private void Pawn_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private async void Pawn_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (isDragging && draggedPawn != null)
             {
@@ -417,7 +524,24 @@ namespace Backgammon
                 draggedPawn.ReleaseMouseCapture();
                 draggedPawn = null;
                 DrawPawns();
-                if (movesForCurrPlayerLeft <= 0) NextPlayerTurn();
+                if (movesForCurrPlayerLeft <= 0)
+                {
+                    await NextPlayerTurn();
+                    return;
+                }
+
+                bool sameAmount = amount == amount2;
+                if (sameAmount ? !gameState.IsAnyMove(amount, amount2) : !gameState.IsAnyMove(firstDiceUsed ? -1 : amount, secondDiceUsed ? -1 : amount2))
+                {
+                    DrawSadFace();
+                    blockAnyMove = true;
+                    possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
+                    possibleMovesMarks.Clear();
+                    await Task.Delay(3000);
+                    blockAnyMove = false;
+                    MyCanvas.Children.Remove(sadFace);
+                    await NextPlayerTurn();
+                }
             }
         }
 
@@ -435,6 +559,12 @@ namespace Backgammon
                 default: break;
             }
 
+            return new BitmapImage(new Uri(assetsPath + path, UriKind.Relative));
+        }
+
+        private BitmapImage GetFaceBitmapImg()
+        {
+            string path = gameState.currentPlayer == Player.white ? "sad_red.png" : "sad_white.png";
             return new BitmapImage(new Uri(assetsPath + path, UriKind.Relative));
         }
     }
