@@ -314,8 +314,14 @@ namespace Backgammon
             possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
             possibleMovesMarks.Clear();
 
-            int amount = !firstDiceUsed ? (int)firstDice.DataContext : -1;
-            int amount2 = !secondDiceUsed ? (int)secondDice.DataContext : -1;
+            int amount = -1;
+            int amount2 = -1;
+            if ((int)firstDice.DataContext == (int)secondDice.DataContext) amount = amount2 = (int)firstDice.DataContext;
+            else
+            {
+                if (!firstDiceUsed) amount = (int)firstDice.DataContext;
+                if (!secondDiceUsed) amount2 = (int)secondDice.DataContext;
+            }
 
             IEnumerable<Move> possibleMoves;
             if (choosenPawn != null)
@@ -492,7 +498,7 @@ namespace Backgammon
                     {
                         gameState.MakeMove(currentMove);
                         movesForCurrPlayerLeft--;
-                        if (currentMove.dice != 0)
+                        if (currentMove.dice != 0 && amount != amount2)
                         {
                             if (currentMove.dice == 1) firstDiceUsed = true;
                             else secondDiceUsed = true;
@@ -508,6 +514,7 @@ namespace Backgammon
                         {
                             gameState.MakeMove((Move)mark.DataContext);
                             movesForCurrPlayerLeft--;
+                            if (amount == amount2) continue;
 
                             if (mark.Name.Contains("1")) firstDiceUsed = true;
                             else if (mark.Name.Contains("2")) secondDiceUsed = true;
