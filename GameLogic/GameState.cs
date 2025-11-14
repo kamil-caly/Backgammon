@@ -4,16 +4,15 @@
     {
         private BoardField[,] board = new BoardField[12, 12];
         public Dictionary<Player, int> beatenPawns { get; private set; }
+        public Dictionary<Player, int> courtPawns { get; private set; }
         public Player currentPlayer { get; private set; }
 
 
         public GameState()
         {
             InitBoard();
-            beatenPawns = new Dictionary<Player, int>() {
-                { Player.red, 0 },
-                { Player.white, 0 }
-            };
+            beatenPawns = new Dictionary<Player, int>() { { Player.red, 0 }, { Player.white, 0 } };
+            courtPawns = new Dictionary<Player, int> { { Player.red, 0 }, { Player.white, 0 } };
             currentPlayer = Player.red;
         }
 
@@ -21,6 +20,18 @@
         {
             for (int c = 0; c < 12; c++)
             {
+                //board[1, 1] = new BoardField(Player.red, 2);
+                //board[1, 2] = new BoardField(Player.red, 2);
+                //board[1, 3] = new BoardField(Player.red, 2);
+                //board[0, 3] = new BoardField(Player.red, 2);
+
+                //board[0, 1] = new BoardField(Player.white, 2);
+                //board[0, 4] = new BoardField(Player.white, 2);
+                //board[1, 4] = new BoardField(Player.white, 2);
+
+                //if (board[0, c] == null) board[0, c] = new BoardField(Player.none, 0);
+                //if (board[1, c] == null) board[1, c] = new BoardField(Player.none, 0);
+
                 if (c == 0)
                 {
                     board[0, c] = new BoardField(Player.red, 2);
@@ -93,6 +104,38 @@
             return false;
         }
 
+        private bool IsAllPawnsInHome()
+        {
+            if (beatenPawns[currentPlayer] > 0) return false;
+
+            if (currentPlayer == Player.red)
+            {
+                for (int r = 0; r < 2; r++)
+                {
+                    for (int c = 0; c < 12; c++)
+                    {
+                        if (r == 1 && c < 6) continue;
+                        if (IsCurrPlayerHere(new Position(r, c))) return false;
+                    }
+                }
+
+                return true;
+            }
+            else
+            {
+                for (int r = 0; r < 2; r++)
+                {
+                    for (int c = 0; c < 12; c++)
+                    {
+                        if (r == 0 && c < 6) continue;
+                        if (IsCurrPlayerHere(new Position(r, c))) return false;
+                    }
+                }
+
+                return true;
+            }
+        }
+
         private Position? CalculateNextField(Position pos, int amount)
         {
             // jeżeli amount jest spoza 1-6 to zwracamy null'a
@@ -129,19 +172,60 @@
 
         public IEnumerable<Move> GetPossibleMoves(Position pos, int firstDice, int secondDice)
         {
+            if (IsAllPawnsInHome()) return GetPossibleInHomeMoves(pos, firstDice, secondDice);
+            else return GetPossibleNormalMoves(pos, firstDice, secondDice);
+        }
+
+        private void DistinctMovesIfTwoTheSame(ref List<Move> moves)
+        {
+            if (moves.Count == 2
+                && moves[0].to.row == moves[1].to.row
+                && moves[0].to.col == moves[1].to.col
+            ) moves = moves.Take(1).Select(m => { m.SetDice(0); return m; }).ToList();
+        }
+
+        private IEnumerable<Move> GetPossibleInHomeMoves(Position pos, int firstDice, int secondDice)
+        {
+            List<Move> possibleMoves = new List<Move>();
+            bool isMorePawnsAtRight = false;
+
+            foreach (var amount in new int[] { firstDice, secondDice })
+            {
+                // jeżeli amount jest z poza 1-6 to 'continue' bo kostka już wykorzystana
+                if (amount < 0 || amount > 6) continue;
+                int dice = firstDice == secondDice ? - 1 : amount == firstDice ? 1 : 2;
+
+                if (pos.col + 1 - amount >= 0) possibleMoves.Add(new Move(pos, new Position(pos.row, pos.col - amount), dice));
+                else
+                {
+                    for (int c = pos.col + 1; c < 6; c++)
+                    {
+                        if (IsCurrPlayerHere(new Position(pos.row, c)))
+                        {
+                            isMorePawnsAtRight = true;
+                            break;
+                        }
+                    }
+
+                    if (!isMorePawnsAtRight) possibleMoves.Add(new Move(pos, new Position(pos.row, -1), dice));
+                }
+            }
+
+            DistinctMovesIfTwoTheSame(ref possibleMoves);
+            return possibleMoves;
+        }
+
+        private IEnumerable<Move> GetPossibleNormalMoves(Position pos, int firstDice, int secondDice)
+        {
             List<Move> possibleMoves = new List<Move>();
 
-            Position? nextFieldFirstDice = CalculateNextField(pos, firstDice); 
+            Position? nextFieldFirstDice = CalculateNextField(pos, firstDice);
             Position? nextFieldSecondDice = CalculateNextField(pos, secondDice);
 
             if (nextFieldFirstDice != null && CanMove(nextFieldFirstDice)) possibleMoves.Add(new Move(pos, nextFieldFirstDice, 1));
             if (nextFieldSecondDice != null && CanMove(nextFieldSecondDice)) possibleMoves.Add(new Move(pos, nextFieldSecondDice, 2));
 
-            if (possibleMoves.Count == 2
-                && possibleMoves[0].to.row == possibleMoves[1].to.row
-                && possibleMoves[0].to.col == possibleMoves[1].to.col
-            ) return possibleMoves.Take(1).ToList().Select(m => { m.SetDice(0); return m; });
-
+            DistinctMovesIfTwoTheSame(ref possibleMoves);
             return possibleMoves;
         }
 
@@ -235,15 +319,23 @@
             }
 
             // to
-            if (GetBoardField(move.to).player != currentPlayer && GetBoardField(move.to).player != Player.none)
+            // wychodzenie na dwór
+            if (move.to.col == -1)
             {
-                // bicie
-                SetBoardField(move.to, currentPlayer, 1);
-                beatenPawns[GetOppositePlayer()]++;
+                courtPawns[currentPlayer]++;
             }
             else
             {
-                SetBoardField(move.to, currentPlayer, GetBoardField(move.to).amount + 1);
+                if (GetBoardField(move.to).player != currentPlayer && GetBoardField(move.to).player != Player.none)
+                {
+                    // bicie
+                    SetBoardField(move.to, currentPlayer, 1);
+                    beatenPawns[GetOppositePlayer()]++;
+                }
+                else
+                {
+                    SetBoardField(move.to, currentPlayer, GetBoardField(move.to).amount + 1);
+                }
             }
         }
     }
