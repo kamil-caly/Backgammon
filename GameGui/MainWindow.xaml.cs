@@ -25,6 +25,7 @@ namespace Backgammon
         private const int triangleFieldLen = 360;
         private const int pawnTopStart = 12;
         private const int pawnDownStart = 758;
+        private const int noMoveBreakDelay = 3000;
 
         GameState gameState;
         private Image firstDice = default!;
@@ -415,18 +416,11 @@ namespace Backgammon
 
             if (!gameState.IsAnyMove(amount, amount2))
             {
-                DrawSadFace();
-                blockAnyMove = true;
-                possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
-                possibleMovesMarks.Clear();
-                await Task.Delay(3000);
-                blockAnyMove = false;
-                MyCanvas.Children.Remove(sadFace);
-                await NextPlayerTurn();
+                await NextPlayerTurnWhenNoMoveLogic();
                 return;
             }
 
-            // wyprowadzamy zbite piony jeśli są
+            // od razu rysujemy możliwe pola do wyprowadzenia zbitych pionów (jeśli są)
             if (gameState.beatenPawns[gameState.currentPlayer] > 0)
             {
                 MarkPossibleMoves(null);
@@ -438,7 +432,7 @@ namespace Backgammon
             if (blockAnyMove) return;
 
             draggedPawn = sender as Ellipse;
-            // wychodzimy z metody gdy kliknięty inny pion niż zbity
+            // jeżeli zbite piony -> wychodzimy z metody gdy kliknięty inny pion niż zbity
             if (gameState.beatenPawns[gameState.currentPlayer] > 0 && Canvas.GetLeft(draggedPawn) != 7 * pawnSize)
             {
                 return;
@@ -524,6 +518,7 @@ namespace Backgammon
                 draggedPawn.ReleaseMouseCapture();
                 draggedPawn = null;
                 DrawPawns();
+
                 if (movesForCurrPlayerLeft <= 0)
                 {
                     await NextPlayerTurn();
@@ -531,18 +526,26 @@ namespace Backgammon
                 }
 
                 bool sameAmount = amount == amount2;
-                if (sameAmount ? !gameState.IsAnyMove(amount, amount2) : !gameState.IsAnyMove(firstDiceUsed ? -1 : amount, secondDiceUsed ? -1 : amount2))
+                if (sameAmount 
+                    ? !gameState.IsAnyMove(amount, amount2) 
+                    : !gameState.IsAnyMove(firstDiceUsed ? -1 : amount, secondDiceUsed ? -1 : amount2)
+                )
                 {
-                    DrawSadFace();
-                    blockAnyMove = true;
-                    possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
-                    possibleMovesMarks.Clear();
-                    await Task.Delay(3000);
-                    blockAnyMove = false;
-                    MyCanvas.Children.Remove(sadFace);
-                    await NextPlayerTurn();
+                    await NextPlayerTurnWhenNoMoveLogic();
                 }
             }
+        }
+
+        private async Task NextPlayerTurnWhenNoMoveLogic()
+        {
+            DrawSadFace();
+            blockAnyMove = true;
+            possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
+            possibleMovesMarks.Clear();
+            await Task.Delay(noMoveBreakDelay);
+            blockAnyMove = false;
+            MyCanvas.Children.Remove(sadFace);
+            await NextPlayerTurn();
         }
 
         private BitmapImage GetDiceBitmapImg(int amount)

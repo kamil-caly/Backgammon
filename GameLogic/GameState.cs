@@ -20,11 +20,6 @@
         {
             for (int c = 0; c < 12; c++)
             {
-                board[0, 1] = new BoardField(Player.white, 2);
-                board[0, 2] = new BoardField(Player.white, 2);
-                board[0, 3] = new BoardField(Player.white, 2);
-                board[0, 4] = new BoardField(Player.white, 2);
-
                 if (c == 0)
                 {
                     board[0, c] = new BoardField(Player.red, 2);
