@@ -12,7 +12,7 @@
         {
             InitBoard();
             beatenPawns = new Dictionary<Player, int>() { { Player.red, 0 }, { Player.white, 0 } };
-            courtPawns = new Dictionary<Player, int> { { Player.red, 0 }, { Player.white, 0 } };
+            courtPawns = new Dictionary<Player, int> { { Player.red, 11 }, { Player.white, 0 } };
             currentPlayer = Player.red;
         }
 
@@ -134,6 +134,11 @@
 
                 return true;
             }
+        }
+
+        public bool IsGameOver()
+        {
+            return courtPawns[Player.red] == 15 || courtPawns[Player.white] == 15;
         }
 
         private Position? CalculateNextField(Position pos, int amount)

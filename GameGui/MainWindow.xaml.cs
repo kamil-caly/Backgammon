@@ -508,6 +508,7 @@ namespace Backgammon
             {
                 if (Menu.Content != null)
                 {
+                    if (Menu.Content is GameOverMenu) return;
                     Menu.Content = null;
                     MyCanvas.IsHitTestVisible = true;
                 }
@@ -622,6 +623,26 @@ namespace Backgammon
                 draggedPawn.ReleaseMouseCapture();
                 draggedPawn = null;
                 DrawPawns();
+
+                // sprawdzenie czy koniec gry
+                if (gameState.IsGameOver())
+                {
+                    MyCanvas.IsHitTestVisible = false;
+                    GameOverMenu gameOverMenu = new GameOverMenu(gameState.currentPlayer);
+                    Menu.Content = gameOverMenu;
+
+                    gameOverMenu.ClickedAction += option =>
+                    {
+                        if (option == GameOverAction.Restart)
+                        {
+                            RestartGame();
+                            Menu.Content = null;
+                            MyCanvas.IsHitTestVisible = true;
+                        }
+                    };
+                    
+                    return;
+                }
 
                 if (movesForCurrPlayerLeft <= 0)
                 {
