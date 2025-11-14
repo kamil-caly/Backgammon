@@ -62,33 +62,6 @@ namespace Backgammon
             DrawDice();
         }
 
-        private void MyCanvas_MouseMove(object sender, MouseEventArgs e)
-        {
-            // jeżeli zbite piony to najpierw trzeba je wprowadzić na planszę
-            if (gameState.beatenPawns[gameState.currentPlayer] > 0) return;
-
-            var hovered = e.OriginalSource as Ellipse;
-            if (hovered != null
-                && (string)hovered.Tag == "Pawn"
-                && hovered.Fill == (gameState.currentPlayer == Player.red ? redPawnColor : whitePawnColor)
-            )
-            {
-                Position hoveredLeft = (Position)hovered.DataContext;
-                if (capturingPawn == null || hoveredLeft.col != capturingPawn.col)
-                {
-                    capturingPawn = hoveredLeft;
-                    Debug.WriteLine($"Najechano na pionek {rand.Next(1000)}");
-                    MarkPossibleMoves((Position)hovered.DataContext);
-                }
-            }
-            else
-            {
-                capturingPawn = null;
-                possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
-                possibleMovesMarks.Clear();
-            }
-        }
-
         #region Drawing
         private void DrawBoard()
         {
@@ -432,6 +405,18 @@ namespace Backgammon
             }
         }
 
+        private async Task NextPlayerTurnWhenNoMoveLogic()
+        {
+            DrawSadFace();
+            MyCanvas.IsHitTestVisible = false;
+            possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
+            possibleMovesMarks.Clear();
+            await Task.Delay(noMoveBreakDelay);
+            MyCanvas.IsHitTestVisible = true;
+            MyCanvas.Children.Remove(sadFace);
+            await NextPlayerTurn();
+        }
+
         private void RestartGame()
         {
             gameState = new GameState();
@@ -450,6 +435,34 @@ namespace Backgammon
             firstDiceUsed = false;
             secondDiceUsed = false;
             DrawPawns();
+        }
+
+        #region Events
+        private void MyCanvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            // jeżeli zbite piony to najpierw trzeba je wprowadzić na planszę
+            if (gameState.beatenPawns[gameState.currentPlayer] > 0) return;
+
+            var hovered = e.OriginalSource as Ellipse;
+            if (hovered != null
+                && (string)hovered.Tag == "Pawn"
+                && hovered.Fill == (gameState.currentPlayer == Player.red ? redPawnColor : whitePawnColor)
+            )
+            {
+                Position hoveredLeft = (Position)hovered.DataContext;
+                if (capturingPawn == null || hoveredLeft.col != capturingPawn.col)
+                {
+                    capturingPawn = hoveredLeft;
+                    Debug.WriteLine($"Najechano na pionek {rand.Next(1000)}");
+                    MarkPossibleMoves((Position)hovered.DataContext);
+                }
+            }
+            else
+            {
+                capturingPawn = null;
+                possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
+                possibleMovesMarks.Clear();
+            }
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
@@ -589,18 +602,7 @@ namespace Backgammon
                 }
             }
         }
-
-        private async Task NextPlayerTurnWhenNoMoveLogic()
-        {
-            DrawSadFace();
-            MyCanvas.IsHitTestVisible = false;
-            possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
-            possibleMovesMarks.Clear();
-            await Task.Delay(noMoveBreakDelay);
-            MyCanvas.IsHitTestVisible = true;
-            MyCanvas.Children.Remove(sadFace);
-            await NextPlayerTurn();
-        }
+        #endregion
 
         private BitmapImage GetDiceBitmapImg(int amount)
         {
