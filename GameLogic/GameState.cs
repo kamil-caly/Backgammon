@@ -20,43 +20,43 @@
         {
             for (int c = 0; c < 12; c++)
             {
-                //board[1, 1] = new BoardField(Player.red, 2);
-                //board[1, 2] = new BoardField(Player.red, 2);
-                //board[1, 3] = new BoardField(Player.red, 2);
-                //board[0, 3] = new BoardField(Player.red, 2);
+                board[1, 1] = new BoardField(Player.red, 5);
+                board[1, 2] = new BoardField(Player.red, 2);
+                board[1, 3] = new BoardField(Player.red, 2);
+                board[1, 5] = new BoardField(Player.red, 2);
 
-                //board[0, 1] = new BoardField(Player.white, 2);
-                //board[0, 4] = new BoardField(Player.white, 2);
-                //board[1, 4] = new BoardField(Player.white, 2);
+                board[0, 1] = new BoardField(Player.white, 5);
+                board[0, 4] = new BoardField(Player.white, 2);
+                board[0, 5] = new BoardField(Player.white, 2);
 
-                //if (board[0, c] == null) board[0, c] = new BoardField(Player.none, 0);
-                //if (board[1, c] == null) board[1, c] = new BoardField(Player.none, 0);
+                if (board[0, c] == null) board[0, c] = new BoardField(Player.none, 0);
+                if (board[1, c] == null) board[1, c] = new BoardField(Player.none, 0);
 
-                if (c == 0)
-                {
-                    board[0, c] = new BoardField(Player.red, 2);
-                    board[1, c] = new BoardField(Player.white, 2);
-                }
-                else if (c == 5)
-                {
-                    board[0, c] = new BoardField(Player.white, 5);
-                    board[1, c] = new BoardField(Player.red, 5);
-                }
-                else if (c == 7)
-                {
-                    board[0, c] = new BoardField(Player.white, 3);
-                    board[1, c] = new BoardField(Player.red, 3);
-                }
-                else if (c == 11)
-                {
-                    board[0, c] = new BoardField(Player.red, 5);
-                    board[1, c] = new BoardField(Player.white, 5);
-                }
-                else
-                {
-                    board[0, c] = new BoardField(Player.none, 0);
-                    board[1, c] = new BoardField(Player.none, 0);
-                }
+                //if (c == 0)
+                //{
+                //    board[0, c] = new BoardField(Player.red, 2);
+                //    board[1, c] = new BoardField(Player.white, 2);
+                //}
+                //else if (c == 5)
+                //{
+                //    board[0, c] = new BoardField(Player.white, 5);
+                //    board[1, c] = new BoardField(Player.red, 5);
+                //}
+                //else if (c == 7)
+                //{
+                //    board[0, c] = new BoardField(Player.white, 3);
+                //    board[1, c] = new BoardField(Player.red, 3);
+                //}
+                //else if (c == 11)
+                //{
+                //    board[0, c] = new BoardField(Player.red, 5);
+                //    board[1, c] = new BoardField(Player.white, 5);
+                //}
+                //else
+                //{
+                //    board[0, c] = new BoardField(Player.none, 0);
+                //    board[1, c] = new BoardField(Player.none, 0);
+                //}
             }
         }
 

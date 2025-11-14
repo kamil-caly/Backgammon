@@ -22,6 +22,8 @@ namespace Backgammon
         private readonly string assetsPath = "assets/";
         private readonly Random rand;
         private const int pawnSize = 70;
+        private const int pawnInCourtWidth = 60;
+        private const int pawnInCourtHeight = 24;
         private const int maxPawnLenInCol = 350;
         private const int triangleFieldLen = 360;
         private const int pawnTopStart = 12;
@@ -35,6 +37,7 @@ namespace Backgammon
         private List<Rectangle> possibleMovesMarks;
         private List<Ellipse> pawns;
         private List<Ellipse> beatenPawns;
+        private List<Rectangle> courtPawns;
         private Move? currentMove = null;
         private Ellipse? draggedPawn;
         private Image sadFace = default!;
@@ -57,6 +60,7 @@ namespace Backgammon
             possibleMovesMarks = new List<Rectangle>();
             pawns = new List<Ellipse>();
             beatenPawns = new List<Ellipse>();
+            courtPawns = new List<Rectangle>();
             DrawBoard();
             DrawPawns();
             DrawDice();
@@ -171,6 +175,9 @@ namespace Backgammon
             // zbite piony
             CreateBeatenPawns(Player.red);
             CreateBeatenPawns(Player.white);
+
+            // wyprowadzone na dwór piony
+            DrawCourtPawns();
         }
 
         private Ellipse CreatePawn(int left, int who, int amount, Player player, bool isTop)
@@ -245,6 +252,36 @@ namespace Backgammon
                 Canvas.SetTop(bPawn, top);
                 MyCanvas.Children.Add(bPawn);
                 beatenPawns.Add(bPawn);
+            }
+        }
+
+        private void DrawCourtPawns()
+        {
+            courtPawns.ForEach(MyCanvas.Children.Remove);
+            courtPawns.Clear();
+
+            foreach (var player in new Player[] {Player.white, Player.red})
+            {
+                for (int i = 0; i < gameState.courtPawns[player]; i++)
+                {
+                    Rectangle pawn = new Rectangle
+                    {
+                        Width = pawnInCourtWidth,
+                        Height = pawnInCourtHeight,
+                        Fill = player == Player.white ? whitePawnColor : redPawnColor,
+                        Stroke = Brushes.Black,
+                        StrokeThickness = 3
+                    };
+
+                    int top = 0;
+                    if (player == Player.white) top = pawnTopStart + i * pawnInCourtHeight + 1 * i;
+                    else top = pawnDownStart + pawnSize - pawnInCourtHeight - i * pawnInCourtHeight - 1 * i;
+
+                    Canvas.SetLeft(pawn, 5);
+                    Canvas.SetTop(pawn, top);
+                    MyCanvas.Children.Add(pawn);
+                    courtPawns.Add(pawn);
+                }
             }
         }
 
