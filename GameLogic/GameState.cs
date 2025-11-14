@@ -3,16 +3,17 @@
     public class GameState
     {
         private BoardField[,] board = new BoardField[12, 12];
-        public Dictionary<Player, int> beatenPawns { get; private set; } = new Dictionary<Player, int>() {
-            { Player.red, 0 },
-            { Player.white, 0 }
-        };
+        public Dictionary<Player, int> beatenPawns { get; private set; }
         public Player currentPlayer { get; private set; }
 
 
         public GameState()
         {
             InitBoard();
+            beatenPawns = new Dictionary<Player, int>() {
+                { Player.red, 0 },
+                { Player.white, 0 }
+            };
             currentPlayer = Player.red;
         }
 

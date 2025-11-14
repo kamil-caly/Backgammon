@@ -1,4 +1,5 @@
-﻿using GameLogic;
+﻿using GameGui;
+using GameLogic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows;
@@ -42,7 +43,6 @@ namespace Backgammon
         private Position? capturingPawn = null;
         private bool firstDiceUsed = false;
         private bool secondDiceUsed = false;
-        private bool blockAnyMove = false;
         private int movesForCurrPlayerLeft = 0;
         private Point mouseOffsetForDragLogic;
         private Point mouseOffsetWhenPawnClick;
@@ -64,7 +64,6 @@ namespace Backgammon
 
         private void MyCanvas_MouseMove(object sender, MouseEventArgs e)
         {
-            if (blockAnyMove) return;
             // jeżeli zbite piony to najpierw trzeba je wprowadzić na planszę
             if (gameState.beatenPawns[gameState.currentPlayer] > 0) return;
 
@@ -433,10 +432,58 @@ namespace Backgammon
             }
         }
 
+        private void RestartGame()
+        {
+            gameState = new GameState();
+
+            int amount = rand.Next(1, 7);
+            int amount2 = rand.Next(1, 7);
+            firstDice.DataContext = amount;
+            firstDice.Source = GetDiceBitmapImg(amount);
+            secondDice.DataContext = amount2;
+            secondDice.Source = GetDiceBitmapImg(amount2);
+            if (amount == amount2) movesForCurrPlayerLeft = 4;
+            else movesForCurrPlayerLeft = 2;
+
+            currPlayerInfo.Fill = gameState.currentPlayer == Player.red ? redPawnColor : whitePawnColor;
+            MyCanvas.Children.Remove(sadFace);
+            firstDiceUsed = false;
+            secondDiceUsed = false;
+            DrawPawns();
+        }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                if (Menu.Content != null)
+                {
+                    Menu.Content = null;
+                    MyCanvas.IsHitTestVisible = true;
+                }
+                else
+                {
+                    PauseMenu pauseMenu = new PauseMenu();
+                    Menu.Content = pauseMenu;
+                    MyCanvas.IsHitTestVisible = false;
+
+                    pauseMenu.ClickedAction += option =>
+                    {
+                        if (option == PauseAction.Continue) Menu.Content = null;
+                        else
+                        {
+                            RestartGame();
+                            Menu.Content = null;
+                        }
+
+                        MyCanvas.IsHitTestVisible = true;
+                    };
+                }
+            }
+        }
+
         private void Pawn_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (blockAnyMove) return;
-
             draggedPawn = sender as Ellipse;
             // jeżeli zbite piony -> wychodzimy z metody gdy kliknięty inny pion niż zbity
             if (gameState.beatenPawns[gameState.currentPlayer] > 0 && Canvas.GetLeft(draggedPawn) != 7 * pawnSize)
@@ -546,11 +593,11 @@ namespace Backgammon
         private async Task NextPlayerTurnWhenNoMoveLogic()
         {
             DrawSadFace();
-            blockAnyMove = true;
+            MyCanvas.IsHitTestVisible = false;
             possibleMovesMarks.ForEach(MyCanvas.Children.Remove);
             possibleMovesMarks.Clear();
             await Task.Delay(noMoveBreakDelay);
-            blockAnyMove = false;
+            MyCanvas.IsHitTestVisible = true;
             MyCanvas.Children.Remove(sadFace);
             await NextPlayerTurn();
         }

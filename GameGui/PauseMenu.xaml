@@ -1,0 +1,66 @@
+﻿<UserControl x:Class="GameGui.PauseMenu"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:GameGui"
+             mc:Ignorable="d" 
+             d:DesignHeight="920" d:DesignWidth="1350">
+    <Border Width="275"
+            Height="150"
+            Background="#ee2211"
+            BorderThickness="4"
+            BorderBrush="#fff"
+            Opacity="0.9">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="0.5*"/>
+                <RowDefinition Height="0.5*"/>
+            </Grid.RowDefinitions>
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="0.5*"/>
+                <ColumnDefinition Width="0.5*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="PAUSE" 
+                       Grid.Row="0"
+                       Grid.ColumnSpan="2"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontSize="30"
+                       FontWeight="Bold"
+                       FontFamily="Arial Black"
+                       Foreground="#fff" />
+
+            <Button Content="Restart"
+                    Click="RestartBtnOnClick"
+                    Width="100"
+                    Padding="10"
+                    Grid.Row="1"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontSize="15"
+                    FontWeight="Bold"
+                    FontFamily="Arial Black"
+                    BorderThickness="0"
+                    Background="#fff"
+                    Foreground="#ee2211" />
+
+            <Button Content="Continue"
+                    Click="ContinueBtnOnClick"
+                    Width="100"
+                    Padding="10"
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontSize="15"
+                    FontWeight="Bold"
+                    FontFamily="Arial Black"
+                    BorderThickness="0"
+                    Background="#fff"
+                    Foreground="#ee2211" />
+        </Grid>
+    </Border>
+</UserControl>

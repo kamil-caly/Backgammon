@@ -5,8 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Backgammon"
         mc:Ignorable="d"
+        KeyDown="Window_KeyDown"
         Title="MainWindow" Height="920" Width="1350" Background="#285042">
-    <Border Height="840" Width="992" ClipToBounds="True" CornerRadius="8" Background="#243d34">
-        <Canvas x:Name="MyCanvas" Height="840" Width="992" />
-    </Border>
+    <Grid>
+        <Border Height="840" Width="992" ClipToBounds="True" CornerRadius="8" Background="#243d34">
+            <Canvas x:Name="MyCanvas" Height="840" Width="992" />
+        </Border>
+        <ContentControl x:Name="Menu"/>
+    </Grid>
 </Window>
