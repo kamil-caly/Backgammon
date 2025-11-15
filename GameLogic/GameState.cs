@@ -3,6 +3,7 @@
     public class GameState
     {
         private BoardField[,] board = new BoardField[12, 12];
+        private Random rand;
         public Dictionary<Player, int> beatenPawns { get; private set; }
         public Dictionary<Player, int> courtPawns { get; private set; }
         public Player currentPlayer { get; private set; }
@@ -12,54 +13,59 @@
         {
             InitBoard();
             beatenPawns = new Dictionary<Player, int>() { { Player.red, 0 }, { Player.white, 0 } };
-            courtPawns = new Dictionary<Player, int> { { Player.red, 11 }, { Player.white, 0 } };
-            currentPlayer = Player.red;
+            courtPawns = new Dictionary<Player, int> { { Player.red, 0 }, { Player.white, 0 } };
+            rand = new Random();
+            currentPlayer = GetRandomPlayer();
         }
 
         private void InitBoard()
         {
             for (int c = 0; c < 12; c++)
             {
-                board[1, 1] = new BoardField(Player.red, 5);
-                board[1, 2] = new BoardField(Player.red, 2);
-                board[1, 3] = new BoardField(Player.red, 2);
-                board[1, 5] = new BoardField(Player.red, 2);
+                //board[1, 1] = new BoardField(Player.red, 5);
+                //board[1, 2] = new BoardField(Player.red, 2);
+                //board[1, 3] = new BoardField(Player.red, 2);
+                //board[1, 5] = new BoardField(Player.red, 2);
 
-                board[0, 1] = new BoardField(Player.white, 5);
-                board[0, 4] = new BoardField(Player.white, 2);
-                board[0, 5] = new BoardField(Player.white, 2);
+                //board[0, 1] = new BoardField(Player.white, 5);
+                //board[0, 4] = new BoardField(Player.white, 2);
+                //board[0, 5] = new BoardField(Player.white, 2);
 
-                if (board[0, c] == null) board[0, c] = new BoardField(Player.none, 0);
-                if (board[1, c] == null) board[1, c] = new BoardField(Player.none, 0);
+                //if (board[0, c] == null) board[0, c] = new BoardField(Player.none, 0);
+                //if (board[1, c] == null) board[1, c] = new BoardField(Player.none, 0);
 
-                //if (c == 0)
-                //{
-                //    board[0, c] = new BoardField(Player.red, 2);
-                //    board[1, c] = new BoardField(Player.white, 2);
-                //}
-                //else if (c == 5)
-                //{
-                //    board[0, c] = new BoardField(Player.white, 5);
-                //    board[1, c] = new BoardField(Player.red, 5);
-                //}
-                //else if (c == 7)
-                //{
-                //    board[0, c] = new BoardField(Player.white, 3);
-                //    board[1, c] = new BoardField(Player.red, 3);
-                //}
-                //else if (c == 11)
-                //{
-                //    board[0, c] = new BoardField(Player.red, 5);
-                //    board[1, c] = new BoardField(Player.white, 5);
-                //}
-                //else
-                //{
-                //    board[0, c] = new BoardField(Player.none, 0);
-                //    board[1, c] = new BoardField(Player.none, 0);
-                //}
+                if (c == 0)
+                {
+                    board[0, c] = new BoardField(Player.red, 2);
+                    board[1, c] = new BoardField(Player.white, 2);
+                }
+                else if (c == 5)
+                {
+                    board[0, c] = new BoardField(Player.white, 5);
+                    board[1, c] = new BoardField(Player.red, 5);
+                }
+                else if (c == 7)
+                {
+                    board[0, c] = new BoardField(Player.white, 3);
+                    board[1, c] = new BoardField(Player.red, 3);
+                }
+                else if (c == 11)
+                {
+                    board[0, c] = new BoardField(Player.red, 5);
+                    board[1, c] = new BoardField(Player.white, 5);
+                }
+                else
+                {
+                    board[0, c] = new BoardField(Player.none, 0);
+                    board[1, c] = new BoardField(Player.none, 0);
+                }
             }
         }
 
+        private Player GetRandomPlayer()
+        {
+            return rand.Next(0, 2) == 0 ? Player.red : Player.white;
+        }
         public bool SetBoardField(Position pos, Player player, int amount)
         {
             if (pos.row < 0 || pos.row > 1 || pos.col < 0 || pos.col > 11) return false;
