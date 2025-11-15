@@ -2,7 +2,7 @@
 {
     public class GameState
     {
-        private BoardField[,] board = new BoardField[12, 12];
+        private BoardField[,] board = new BoardField[2, 12];
         private Random rand;
         public Dictionary<Player, int> beatenPawns { get; private set; }
         public Dictionary<Player, int> courtPawns { get; private set; }
@@ -22,7 +22,6 @@
         {
             for (int c = 0; c < 12; c++)
             {
-                //board[1, 1] = new BoardField(Player.red, 5);
                 //board[1, 2] = new BoardField(Player.red, 2);
                 //board[1, 3] = new BoardField(Player.red, 2);
                 //board[1, 5] = new BoardField(Player.red, 2);
@@ -60,6 +59,21 @@
                     board[1, c] = new BoardField(Player.none, 0);
                 }
             }
+        }
+
+        private BoardField[,] CopyBoard()
+        {
+            BoardField[,] copyBoard = new BoardField[2, 12];
+
+            for (int r = 0; r < 2; r++)
+            {
+                for (int c = 0; c < 12; c++)
+                {
+                    copyBoard[r, c] = new BoardField(board[r, c].player, board[r, c].amount);
+                }
+            }
+
+            return copyBoard;
         }
 
         private Player GetRandomPlayer()
@@ -226,6 +240,50 @@
             return possibleMoves;
         }
 
+        private void LeaveTheLongestMoveIfPossibleOnlyOneMoveAmoungTwo(ref List<Move> moves, int firstDice, int secondDice)
+        {
+            if (moves.Count <= 1 || firstDice == secondDice) return;
+            
+            var oryginalBoard = CopyBoard();
+            var oryginalBeatenPawns = new Dictionary<Player, int>(beatenPawns);
+            var oryginalCourtPawns = new Dictionary<Player, int>(courtPawns);
+
+            var copyBoardForFirstMove = CopyBoard();
+            var copyBeatenPawnsForFirstMove = new Dictionary<Player, int>(beatenPawns);
+            var copyCourtPawnsForFirstMove = new Dictionary<Player, int>(courtPawns);
+            var copyBoardForSecondMove = CopyBoard();
+            var copyBeatenPawnsForSecondMove = new Dictionary<Player, int>(beatenPawns);
+            var copyCourtPawnsForSecondMove = new Dictionary<Player, int>(courtPawns);
+
+            // ruch z pierwszej kostki
+            bool isAnyMoveAfterFirstMove = false;
+            beatenPawns = copyBeatenPawnsForFirstMove;
+            courtPawns = copyCourtPawnsForFirstMove;
+            board = copyBoardForFirstMove;
+            MakeMove(moves[0]);
+            if (IsAnyMove(-1, secondDice)) isAnyMoveAfterFirstMove = true;
+
+            // ruch z drugiej kostki
+            bool isAnyMoveAfterSecondMove = false;
+            beatenPawns = copyBeatenPawnsForSecondMove;
+            courtPawns = copyCourtPawnsForSecondMove;
+            board = copyBoardForSecondMove;
+            MakeMove(moves[1]);
+            if (IsAnyMove(firstDice, -1)) isAnyMoveAfterSecondMove = true;
+
+            // sprawdzamy czy po zrobieniu ruchów z obu kostek nie można zrobić już żadnego innego ruchu
+            // dla aktualnego gracza
+            if (!isAnyMoveAfterFirstMove && !isAnyMoveAfterSecondMove)
+            {
+                // zostawiamy tylko ruch o większej liczbie oczek
+                moves = firstDice > secondDice ? new List<Move> { moves[0] } : new List<Move> { moves[1] };
+            }
+
+            board = oryginalBoard;
+            beatenPawns = oryginalBeatenPawns;
+            courtPawns = oryginalCourtPawns;
+        }
+
         private IEnumerable<Move> GetPossibleNormalMoves(Position pos, int firstDice, int secondDice)
         {
             List<Move> possibleMoves = new List<Move>();
@@ -237,6 +295,11 @@
             if (nextFieldSecondDice != null && CanMove(nextFieldSecondDice)) possibleMoves.Add(new Move(pos, nextFieldSecondDice, 2));
 
             DistinctMovesIfTwoTheSame(ref possibleMoves);
+
+            // Jeśli gracz może wykonać tylko jedno przesunięcie, ale o liczbę oczek z dowolnej z kostek,
+            // wykonuje przesunięcie o większą liczbę oczek.
+            LeaveTheLongestMoveIfPossibleOnlyOneMoveAmoungTwo(ref possibleMoves, firstDice, secondDice);
+
             return possibleMoves;
         }
 
