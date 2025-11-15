@@ -132,5 +132,5 @@ Bearing off is **not mandatory** — a player may choose to make a normal move i
 
 ## ✔️ License
 
-GPL-3.0 license
+[LICENSE](./LICENSE)
 
