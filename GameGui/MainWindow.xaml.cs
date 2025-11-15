@@ -578,6 +578,31 @@ namespace Backgammon
             }
         }
 
+        private bool IsGameOver()
+        {
+            if (gameState.IsGameOver())
+            {
+                MyCanvas.IsHitTestVisible = false;
+                GameOverMenu gameOverMenu = new GameOverMenu(gameState.currentPlayer);
+                Menu.Content = gameOverMenu;
+
+                gameOverMenu.ClickedAction += option =>
+                {
+                    if (option == GameOverAction.Restart)
+                    {
+                        RestartGame();
+                        Menu.Content = null;
+                        MyCanvas.IsHitTestVisible = true;
+                    }
+                    else Application.Current.Shutdown();
+                };
+
+                return true;
+            }
+
+            return false;
+        }
+
         private async void Pawn_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (isDragging && draggedPawn != null)
@@ -624,25 +649,8 @@ namespace Backgammon
                 draggedPawn = null;
                 DrawPawns();
 
-                // sprawdzenie czy koniec gry
-                if (gameState.IsGameOver())
-                {
-                    MyCanvas.IsHitTestVisible = false;
-                    GameOverMenu gameOverMenu = new GameOverMenu(gameState.currentPlayer);
-                    Menu.Content = gameOverMenu;
-
-                    gameOverMenu.ClickedAction += option =>
-                    {
-                        if (option == GameOverAction.Restart)
-                        {
-                            RestartGame();
-                            Menu.Content = null;
-                            MyCanvas.IsHitTestVisible = true;
-                        }
-                    };
-                    
-                    return;
-                }
+                // sprawdzenie końca gry
+                if (IsGameOver()) return; 
 
                 if (movesForCurrPlayerLeft <= 0)
                 {

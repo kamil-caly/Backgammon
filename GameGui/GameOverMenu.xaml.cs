@@ -25,7 +25,7 @@ namespace GameGui
 
         private void QuitBtnOnClick(object sender, RoutedEventArgs e)
         {
-            Application.Current.Shutdown();
+            ClickedAction?.Invoke(GameOverAction.Quit);
         }
     }
 }
