@@ -102,7 +102,7 @@ namespace GameLogic.Tests
             var result = gameState.SetBoardField(position, player, amount);
 
             // assert
-            
+
             Assert.False(result);
         }
 
@@ -141,5 +141,190 @@ namespace GameLogic.Tests
             Assert.Equal(Player.none, result.player);
             Assert.Equal(0, result.amount);
         }
+
+        [Fact]
+        public void SwitchPlayer_ChangesCurrentPlayer()
+        {
+            // arrange
+
+            var gameState = new GameState();
+            var initialPlayer = gameState.currentPlayer;
+
+            // act
+
+            gameState.SwitchPlayer();
+            var newPlayer = gameState.currentPlayer;
+
+            // assert
+
+            Assert.NotEqual(initialPlayer, newPlayer);
+            Assert.True(newPlayer == Player.red || newPlayer == Player.white);
+        }
+
+        [Fact]
+        public void GetOppositePlayer_ReturnsCorrectOpponent()
+        {
+            // arrange
+
+            var gameState = new GameState();
+
+            // act
+            var initialPlayer = gameState.currentPlayer;
+            var oppositePlayer = gameState.GetOppositePlayer();
+
+            // assert
+
+            Assert.NotEqual(initialPlayer, oppositePlayer);
+            Assert.True(oppositePlayer == Player.red || oppositePlayer == Player.white);
+        }
+
+        [Fact]
+        public void IsCurrPlayerHere_ForCurrentPlayerPosition_ReturnsTrue()
+        {
+            // arrange
+
+            var gameState = new GameState();
+            var position = new Position(0, 0);
+
+            // act
+
+            var result = gameState.IsCurrPlayerHere(position);
+
+            // assert
+
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void IsGameOver_For14WhiteAnd13RedPawnsInCourt_ReturnsFalse()
+        {
+            // arrange
+
+            var gameState = new GameState();
+            gameState.courtPawns[Player.white] = 14;
+            gameState.courtPawns[Player.red] = 13;
+
+            // act
+
+            var result = gameState.IsGameOver();
+
+            // assert
+
+            Assert.False(result);
+        }
+
+        [Theory]
+        [InlineData(1, 2)]
+        public void GetPossibleMoves_ForInitialStateAndDice1And2ForRedPlayer_ReturnsCorrectNormalMoves(int dice1, int dice2)
+        {
+            // arrange
+
+            var gameState = new GameState();
+
+            // act
+
+            var possibleMoves = gameState.GetPossibleMoves(new Position(0, 0), dice1, dice2).ToList();
+            if (gameState.currentPlayer != Player.red)
+            {
+                gameState.SwitchPlayer();
+            }
+
+            // assert
+
+            Assert.Contains(possibleMoves, move => move.from!.row == 0 && move.from.col == 0 && move.to.row == 0 && move.to.col == 1);
+            Assert.Contains(possibleMoves, move => move.from!.row == 0 && move.from.col == 0 && move.to.row == 0 && move.to.col == 2);
+        }
+
+        [Theory]
+        [InlineData(6, 3)]
+        public void GetPossibleMoves_ForChangedGameBoardAndDice1And2ForWhitePlayer_ReturnsCorrectNormalMoves(int dice1, int dice2)
+        {
+            // arrange
+
+            var gameState = new GameState();
+            gameState.SetBoardField(new Position(0, 6), Player.white, 1);
+            gameState.SetBoardField(new Position(0, 11), Player.red, 1);
+            if (gameState.currentPlayer != Player.white)
+            {
+                gameState.SwitchPlayer();
+            }
+
+            // act
+
+            var possibleMoves = gameState.GetPossibleMoves(new Position(0, 6), dice1, dice2).ToList();
+
+            // assert
+
+            Assert.NotNull(possibleMoves);
+            Assert.Single(possibleMoves);
+            Assert.Contains(possibleMoves, move => move.from!.row == 0 && move.from.col == 6 && move.to.row == 0 && move.to.col == 3);
+        }
+
+        [Theory]
+        [InlineData(5, 4)]
+        [InlineData(3, 3)]
+        public void GetPossibleMoves_ForBlockedPosition_ReturnsNoMoves(int dice1, int dice2)
+        {
+            // arrange
+
+            var gameState = new GameState();
+            gameState.SetBoardField(new Position(1, 9), Player.white, 2);
+            gameState.SetBoardField(new Position(1, 8), Player.white, 3);
+            gameState.SetBoardField(new Position(1, 7), Player.white, 4);
+            if (gameState.currentPlayer != Player.red)
+            {
+                gameState.SwitchPlayer();
+            }
+
+            // act
+
+            var possibleMoves = gameState.GetPossibleMoves(new Position(0, 11), dice1, dice2).ToList();
+
+            // assert
+
+            Assert.NotNull(possibleMoves);
+            Assert.Empty(possibleMoves);
+        }
+
+        [Theory]
+        [InlineData(2, 6)]
+        public void GetPossibleMoves_ForChangedGameBoardAndDice1And2ForWhitePlayer_ReturnsCorrectInHomeMoves(int dice1, int dice2)
+        {
+            // arrange
+
+            var gameState = new GameState();
+            gameState.SetBoardField(new Position(0, 5), Player.none, 0);
+            gameState.SetBoardField(new Position(0, 7), Player.none, 0);
+            gameState.SetBoardField(new Position(1, 0), Player.none, 0);
+            gameState.SetBoardField(new Position(1, 11), Player.none, 0);
+            gameState.SetBoardField(new Position(0, 3), Player.white, 1);
+            gameState.SetBoardField(new Position(0, 5), Player.white, 1);
+            if (gameState.currentPlayer != Player.white)
+            {
+                gameState.SwitchPlayer();
+            }
+
+            // act
+
+            var possibleMoves1 = gameState.GetPossibleMoves(new Position(0, 3), dice1, dice2).ToList();
+            var possibleMoves2 = gameState.GetPossibleMoves(new Position(0, 5), dice1, dice2).ToList();
+
+            // assert
+
+            Assert.NotNull(possibleMoves1);
+            Assert.Single(possibleMoves1);
+            Assert.Contains(possibleMoves1, move => move.from!.row == 0 && move.from.col == 3 && move.to.row == 0 && move.to.col == 1);
+
+            Assert.NotNull(possibleMoves2);
+            Assert.Equal(2, possibleMoves2.Count);
+            Assert.Contains(possibleMoves2, move => move.from!.row == 0 && move.from.col == 5 && move.to.row == 0 && move.to.col == 3);
+            Assert.Contains(possibleMoves2, move => move.from!.row == 0 && move.from.col == 5 && move.to.row == 0 && move.to.col == -1);
+        }
+
+        // TODO
+        // Tests for GetPossibleBackOnBoardMoves
+        // Tests for IsAnyMove
+        // Tests for GetLongestMove
+        // Tests for MakeMove
     }
 }
