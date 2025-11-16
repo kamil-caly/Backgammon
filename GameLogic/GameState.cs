@@ -61,7 +61,7 @@
             }
         }
 
-        private BoardField[,] CopyBoard()
+        public BoardField[,] CopyBoard()
         {
             BoardField[,] copyBoard = new BoardField[2, 12];
 
