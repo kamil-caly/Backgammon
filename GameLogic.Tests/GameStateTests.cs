@@ -185,6 +185,10 @@ namespace GameLogic.Tests
 
             var gameState = new GameState();
             var position = new Position(0, 0);
+            if (gameState.currentPlayer != Player.red)
+            {
+                gameState.SwitchPlayer();
+            }
 
             // act
 
@@ -220,14 +224,14 @@ namespace GameLogic.Tests
             // arrange
 
             var gameState = new GameState();
-
-            // act
-
-            var possibleMoves = gameState.GetPossibleMoves(new Position(0, 0), dice1, dice2).ToList();
             if (gameState.currentPlayer != Player.red)
             {
                 gameState.SwitchPlayer();
             }
+
+            // act
+
+            var possibleMoves = gameState.GetPossibleMoves(new Position(0, 0), dice1, dice2).ToList();
 
             // assert
 
