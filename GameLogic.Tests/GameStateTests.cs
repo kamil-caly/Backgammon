@@ -325,10 +325,321 @@ namespace GameLogic.Tests
             Assert.Contains(possibleMoves2, move => move.from!.row == 0 && move.from.col == 5 && move.to.row == 0 && move.to.col == -1);
         }
 
-        // TODO
-        // Tests for GetPossibleBackOnBoardMoves
-        // Tests for IsAnyMove
-        // Tests for GetLongestMove
-        // Tests for MakeMove
+        [Theory]
+        [InlineData(2, 5)]
+        public void GetPossibleBackOnBoardMoves_ForChangedGameBoardAndDice1And2ForWhitePlayer_ReturnsOneCorrctMove(int dice1, int dice2)
+        {
+            // arrange
+
+            var gameState = new GameState();
+            if (gameState.currentPlayer != Player.white)
+            {
+                gameState.SwitchPlayer();
+            }
+            gameState.SetBoardField(new Position(1, 4), Player.red, 3);
+
+            // act
+
+            var result = gameState.GetPossibleBackOnBoardMoves(dice1, dice2);
+
+            // assert
+
+            Assert.NotNull(result);
+            Assert.Single(result);
+            Assert.Contains(result, move => move.from == null && move.to.row == 1 && move.to.col == 1);
+        }
+
+        [Theory]
+        [InlineData(1, 3)]
+        [InlineData(1, 1)]
+        [InlineData(6, 6)]
+        public void GetPossibleBackOnBoardMoves_ForChangedGameBoardAndDice1And2ForRedPlayer_ReturnsNoMoves(int dice1, int dice2)
+        {
+            // arrange
+
+            var gameState = new GameState();
+            if (gameState.currentPlayer != Player.red)
+            {
+                gameState.SwitchPlayer();
+            }
+            gameState.SetBoardField(new Position(0, 2), Player.white, 3);
+            gameState.SetBoardField(new Position(0, 0), Player.white, 2);
+            gameState.SetBoardField(new Position(0, 5), Player.white, 6);
+
+            // act
+
+            var result = gameState.GetPossibleBackOnBoardMoves(dice1, dice2);
+
+            // assert
+
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Theory]
+        [InlineData(1, 6)]
+        [InlineData(2, 4)]
+        [InlineData(5, 5)]
+        public void IsAnyMove_ForChangedGameBoardAndDice1AndDice2ForRedPlayer_ReturnsTrue(int dice1, int dice2)
+        {
+            // arrange
+
+            var gameState = new GameState();
+            if (gameState.currentPlayer != Player.red)
+            {
+                gameState.SwitchPlayer();
+            }
+
+            for (int r = 0; r < 2; r++)
+            {
+                for (int c = 0; c < 12; c++)
+                {
+                    gameState.SetBoardField(new Position(r, c), Player.white, 2);
+                }
+            }
+
+            gameState.SetBoardField(new Position(0, 6), Player.red, 2);
+            gameState.SetBoardField(new Position(0, 7), Player.red, 2);
+            gameState.SetBoardField(new Position(1, 11), Player.red, 2);
+            gameState.SetBoardField(new Position(0, 8), Player.red, 2);
+            gameState.SetBoardField(new Position(0, 10), Player.red, 2);
+            gameState.SetBoardField(new Position(0, 11), Player.red, 2);
+            
+
+            // act
+
+            var result = gameState.IsAnyMove(dice1, dice2);
+
+            // assert
+
+            Assert.True(result);
+        }
+
+        [Theory]
+        [InlineData(1, 6)]
+        [InlineData(2, 4)]
+        [InlineData(5, 5)]
+        public void IsAnyMove_ForChangedGameBoardAndDice1AndDice2ForWhitePlayer_ReturnsFalse(int dice1, int dice2)
+        {
+            // arrange
+
+            var gameState = new GameState();
+            if (gameState.currentPlayer != Player.white)
+            {
+                gameState.SwitchPlayer();
+            }
+
+            for (int r = 0; r < 2; r++)
+            {
+                for (int c = 0; c < 12; c++)
+                {
+                    gameState.SetBoardField(new Position(r, c), Player.red, 2);
+                }
+            }
+
+            gameState.SetBoardField(new Position(0, 0), Player.white, 2);
+            gameState.SetBoardField(new Position(0, 10), Player.white, 2);
+            gameState.SetBoardField(new Position(1, 5), Player.white, 2);
+
+            // act
+
+            var result = gameState.IsAnyMove(dice1, dice2);
+
+            // assert
+
+            Assert.False(result);
+        }
+
+        private List<(Position[], int)> _getLongesMoveParamsRed = new List<(Position[], int)>()
+        {
+            (new Position[] { new Position(0, 7), new Position(0, 10), new Position(1, 10) }, 1),
+            (new Position[] { new Position(0, 7), new Position(0, 9), new Position(0, 8) }, 0),
+            (new Position[] { new Position(0, 10), new Position(1, 8), new Position(1, 9) }, 0),
+        };
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(2)]
+        public void GetLongestMove_ForInitGameBoardAndDice1AndDice2ForRedPlayer_ReturnsCorrectedMove(int idx)
+        {
+            // arrange
+
+            var gameState = new GameState();
+            if (gameState.currentPlayer != Player.red)
+            {
+                gameState.SwitchPlayer();
+            }
+            var from = _getLongesMoveParamsRed[idx].Item1[0];
+            var to = _getLongesMoveParamsRed[idx].Item1[1];
+            var to2 = _getLongesMoveParamsRed[idx].Item1[2];
+            var which = _getLongesMoveParamsRed[idx].Item2;
+
+            // act
+
+            var result = gameState.GetLongestMove(from, to, to2);
+
+            // assert
+
+            Assert.NotNull(result);
+            Assert.Equal(result.from!.row, from.row);
+            Assert.Equal(result.from!.col, from.col);
+            Assert.Equal(result.to.row, which == 0 ? to.row : to2.row);
+            Assert.Equal(result.to.col, which == 0 ? to.col : to2.col);
+        }
+
+        private List<(Position[], int)> _getLongesMoveParamsWhite = new List<(Position[], int)>()
+        {
+            (new Position[] { new Position(0, 7), new Position(0, 5), new Position(0, 4) }, 1),
+            (new Position[] { new Position(1, 7), new Position(1, 9), new Position(0, 10) }, 1),
+            (new Position[] { new Position(1, 7), new Position(1, 11), new Position(1, 9) }, 0),
+        };
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(1)]
+        [InlineData(2)]
+        public void GetLongestMove_ForInitGameBoardAndDice1AndDice2ForWhitePlayer_ReturnsCorrectedMove(int idx)
+        {
+            // arrange
+
+            var gameState = new GameState();
+            if (gameState.currentPlayer != Player.white)
+            {
+                gameState.SwitchPlayer();
+            }
+            var from = _getLongesMoveParamsWhite[idx].Item1[0];
+            var to = _getLongesMoveParamsWhite[idx].Item1[1];
+            var to2 = _getLongesMoveParamsWhite[idx].Item1[2];
+            var which = _getLongesMoveParamsWhite[idx].Item2;
+
+            // act
+
+            var result = gameState.GetLongestMove(from, to, to2);
+
+            // assert
+
+            Assert.NotNull(result);
+            Assert.Equal(result.from!.row, from.row);
+            Assert.Equal(result.from!.col, from.col);
+            Assert.Equal(result.to.row, which == 0 ? to.row : to2.row);
+            Assert.Equal(result.to.col, which == 0 ? to.col : to2.col);
+        }
+
+        [Fact]
+        public void GetLongestMove_ForChangedGameBoardAnd1BeatenRedPawnAndDice1AndDice2ForRedPlayer_ReturnsCorrectedMove()
+        {
+            // arrange
+
+            var gameState = new GameState();
+            gameState.beatenPawns[Player.red] = 1;
+            if (gameState.currentPlayer != Player.red)
+            {
+                gameState.SwitchPlayer();
+            }
+            Position? from = null;
+            Position to = new Position(0, 1);
+            Position to2 = new Position(0, 3);
+
+            // act
+
+            var result = gameState.GetLongestMove(from, to, to2);
+
+            // assert
+
+            Assert.NotNull(result);
+            Assert.Null(result.from);
+            Assert.Equal(result.to.row, to2.row);
+            Assert.Equal(result.to.col, to2.col);
+        }
+
+        [Fact]
+        public void MakeMove_ForChangedBoardForRedPlayerAndCapturingWhitePlayer_ReturnsCorrectlyUpdatedBoard()
+        {
+            // arrange
+
+            var gameState = new GameState();
+            if (gameState.currentPlayer != Player.red)
+            {
+                gameState.SwitchPlayer();
+            }
+            gameState.SetBoardField(new Position(0, 9), Player.white, 1);
+            Move move = new Move(new Position(0, 7), new Position(0, 9));
+
+            // act
+
+            gameState.MakeMove(move);
+
+            // assert
+
+            Assert.Equal(Player.red, gameState.GetBoardField(new Position(0, 7)).player);
+            Assert.Equal(2, gameState.GetBoardField(new Position(0, 7)).amount);
+            Assert.Equal(Player.red, gameState.GetBoardField(new Position(0, 9)).player);
+            Assert.Equal(1, gameState.GetBoardField(new Position(0, 9)).amount);
+            Assert.Equal(1, gameState.beatenPawns[Player.white]);
+            Assert.Equal(0, gameState.beatenPawns[Player.red]);
+        }
+
+        [Fact]
+        public void MakeMove_ForChangedBoardForWhitePlayerMovingToEmptyField_ReturnsCorrectlyUpdatedBoard()
+        {
+            // arrange
+
+            var gameState = new GameState();
+            if (gameState.currentPlayer != Player.white)
+            {
+                gameState.SwitchPlayer();
+            }
+            gameState.SetBoardField(new Position(0, 7), Player.white, 6);
+            Move move = new Move(new Position(0, 7), new Position(0, 9));
+
+            // act
+
+            gameState.MakeMove(move);
+
+            // assert
+
+            Assert.Equal(Player.white, gameState.GetBoardField(new Position(0, 7)).player);
+            Assert.Equal(5, gameState.GetBoardField(new Position(0, 7)).amount);
+            Assert.Equal(Player.white, gameState.GetBoardField(new Position(0, 9)).player);
+            Assert.Equal(1, gameState.GetBoardField(new Position(0, 9)).amount);
+        }
+
+        [Fact]
+        public void MakeMove_ForChangedBoardForWhitePlayerMovingToCourt_ReturnsCorrectlyUpdatedBoard()
+        {
+            // arrange
+
+            var gameState = new GameState();
+            if (gameState.currentPlayer != Player.white)
+            {
+                gameState.SwitchPlayer();
+            }
+
+            for (int r = 0; r < 2; r++)
+            {
+                for (int c = 0; c < 12; c++)
+                {
+                    gameState.SetBoardField(new Position(r, c), Player.none, 0);
+                }
+            }
+
+            gameState.SetBoardField(new Position(0, 4), Player.white, 1);
+            gameState.SetBoardField(new Position(0, 3), Player.red, 5);
+
+            Move move = new Move(new Position(0, 4), new Position(0, -1));
+
+            // act
+
+            gameState.MakeMove(move);
+
+            // assert
+
+            Assert.Equal(Player.red, gameState.GetBoardField(new Position(0, 3)).player);
+            Assert.Equal(5, gameState.GetBoardField(new Position(0, 3)).amount);
+            Assert.Equal(Player.none, gameState.GetBoardField(new Position(0, 4)).player);
+            Assert.Equal(0, gameState.GetBoardField(new Position(0, 4)).amount);
+            Assert.Equal(1, gameState.courtPawns[Player.white]);
+        }
     }
 }
