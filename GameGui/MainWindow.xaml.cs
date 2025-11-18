@@ -96,6 +96,8 @@ namespace Backgammon
             // info czyj ruch
             currPlayerInfo = new Ellipse
             {
+                Name = "CurrentPlayerInfo",
+                DataContext = gameState.currentPlayer,
                 Width = 35,
                 Height = 35,
                 Stroke = Brushes.Black,

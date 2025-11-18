@@ -20,8 +20,10 @@ namespace GameGui.Tests
             Assert.NotNull(canvas);
 
             // assert: triangles drawn (top + bottom = 24)
-            int triangles = canvas.Children.OfType<Polygon>().Count();
-            Assert.Equal(24, triangles);
+            var triangles = canvas.Children.OfType<Polygon>();
+            Assert.Equal(24, triangles.Count());
+            Assert.Equal(12, triangles.Where(t => t.Points.Any(p => p.X == 35 && p.Y == 360)).Count());
+            Assert.Equal(12, triangles.Where(t => t.Points.Any(p => p.X == 35 && p.Y == -360)).Count());
 
             // assert: some pawns exist
             int pawns = canvas.Children.OfType<Ellipse>()
